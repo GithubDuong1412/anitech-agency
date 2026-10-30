@@ -1,0 +1,96 @@
+[
+  {
+    "id": "ceo",
+    "name": "Elio",
+    "role": "ceo",
+    "title": "Chief Executive",
+    "color": "#8dffa0",
+    "rule": "ceo-elio",
+    "keywords": [],
+    "collaborators": [],
+    "map": { "x": 62, "y": 32, "height": 19 },
+    "assets": { "avatar": "/characters/ceo/avatar.png", "sprite": "/characters/ceo/sprite.png" },
+    "agents": [
+      "specialized/agents-orchestrator.md",
+      "engineering/engineering-git-workflow-master.md"
+    ]
+  },
+  {
+    "id": "sasuke",
+    "name": "Sasuke",
+    "role": "backend",
+    "title": "Backend Architect",
+    "color": "#7cc4ff",
+    "rule": "sasuke-backend",
+    "keywords": ["api", "database", "backend", "server", "schema", "endpoint", "cơ sở dữ liệu"],
+    "collaborators": ["natsu"],
+    "map": { "x": 37, "y": 33, "height": 19 },
+    "assets": { "avatar": "/characters/sasuke/avatar.png", "sprite": "/characters/sasuke/sprite.png" },
+    "agents": ["engineering/engineering-backend-architect.md"]
+  },
+  {
+    "id": "luffy",
+    "name": "Luffy",
+    "role": "frontend",
+    "title": "Frontend Developer",
+    "color": "#9e0000",
+    "rule": "luffy-frontend",
+    "keywords": ["frontend", "front-end", "react", "css", "ui", "component", "giao diện", "nút", "trang web"],
+    "collaborators": ["gojo"],
+    "map": { "x": 83, "y": 46, "height": 17 },
+    "assets": { "avatar": "/characters/luffy/avatar.png", "sprite": "/characters/luffy/sprite.png" },
+    "agents": ["engineering/engineering-frontend-developer.md"]
+  },
+  {
+    "id": "gojo",
+    "name": "Gojo",
+    "role": "senior",
+    "title": "Senior Developer",
+    "color": "#c3a6ff",
+    "rule": "gojo-senior",
+    "keywords": ["laravel", "livewire", "three.js", "refactor"],
+    "collaborators": [],
+    "map": { "x": 79, "y": 74, "height": 19 },
+    "assets": { "avatar": "/characters/gojo/avatar.png", "sprite": "/characters/gojo/sprite.png" },
+    "agents": ["engineering/engineering-senior-developer.md"]
+  },
+  {
+    "id": "natsu",
+    "name": "Natsu",
+    "role": "security",
+    "title": "Application Security Engineer",
+    "color": "#ff8d8a",
+    "rule": "natsu-security",
+    "keywords": ["security", "secure", "auth", "login", "permission", "bảo mật", "phân quyền", "đăng nhập", "lỗ hổng"],
+    "collaborators": ["sasuke"],
+    "map": { "x": 19, "y": 48, "height": 17 },
+    "assets": { "avatar": "/characters/natsu/avatar.png", "sprite": "/characters/natsu/sprite.png" },
+    "agents": ["security/security-appsec-engineer.md"]
+  },
+  {
+    "id": "levi",
+    "name": "Levi",
+    "role": "testing",
+    "title": "Test Automation Engineer",
+    "color": "#ffd36b",
+    "rule": "levi-testing",
+    "keywords": ["test", "qa", "regression", "playwright", "kiểm thử", "test hồi quy"],
+    "collaborators": [],
+    "map": { "x": 22, "y": 75, "height": 15, "label": { "x": 28, "y": 50 } },
+    "assets": { "avatar": "/characters/levi/avatar.png", "sprite": "/characters/levi/sprite.png" },
+    "agents": ["testing/testing-test-automation-engineer.md"]
+  },
+  {
+    "id": "goku",
+    "name": "Goku",
+    "role": "reality",
+    "title": "Reality Checker",
+    "color": "#ff7500",
+    "rule": "goku-reality",
+    "keywords": ["release", "deploy", "quality gate", "phát hành", "nghiệm thu", "duyệt"],
+    "collaborators": [],
+    "map": { "x": 50, "y": 91, "height": 17 },
+    "assets": { "avatar": "/characters/goku/avatar.png", "sprite": "/characters/goku/sprite.png" },
+    "agents": ["testing/testing-reality-checker.md"]
+  }
+]

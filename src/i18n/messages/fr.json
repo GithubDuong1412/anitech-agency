@@ -1,0 +1,201 @@
+{
+  "app": {
+    "brand": "ANITECH AGENCY",
+    "subtitle": "OPÉRATIONS DES AGENTS",
+    "pageTitle": "L’espace du studio",
+    "pageSubtitle": "Une équipe resserrée. Des responsabilités claires.",
+    "localeLabel": "Langue"
+  },
+  "navigation": {
+    "workspace": "ESPACE DE TRAVAIL",
+    "controlRoom": "Salle de contrôle",
+    "agentRoster": "Équipe d’agents",
+    "workQueue": "File de travail"
+  },
+  "dashboard": {
+    "companyLabel": "VOTRE ENTREPRISE IA PRIVÉE",
+    "livePreview": "APERÇU EN DIRECT",
+    "createTask": "Créer une tâche",
+    "teamReady": "L’équipe est prête",
+    "teamReadyDetail": "Supervision du CEO · 6 spécialistes disponibles",
+    "teamWorking": "L’équipe collabore",
+    "teamWorkingDetail": "CEO en coordination · travail en cours",
+    "awaitingApproval": "En attente de votre validation",
+    "activeTasks": "TÂCHES ACTIVES",
+    "approvalCount": "EN ATTENTE DE VOTRE VALIDATION",
+    "teamOnline": "ÉQUIPE EN LIGNE"
+  },
+  "office": {
+    "kicker": "PLAN DE L’ESPACE",
+    "title": "Un studio, sept rôles",
+    "hint": "Sélectionnez un collègue",
+    "sceneDescription": "Bureau 3D isométrique avec sept zones de travail et un espace de réunion central.",
+    "rooms": {
+      "backend": "LABORATOIRE BACKEND",
+      "security": "COFFRE SÉCURITÉ",
+      "frontend": "STUDIO FRONTEND",
+      "senior": "SALLE D’ARCHITECTURE",
+      "testing": "ZONE DE TESTS",
+      "reality": "PORTE DE LIVRAISON",
+      "ceo": "BUREAU DU CEO"
+    },
+    "legendReady": "Disponible",
+    "legendWorking": "En cours",
+    "legendReview": "À valider",
+    "zoomLabel": "Zoom de la carte",
+    "zoomOut": "Dézoomer",
+    "zoomIn": "Zoomer",
+    "zoomReset": "Réinitialiser",
+    "zoomAll": "Zoom all",
+    "zoomExit": "Réduire"
+  },
+  "roster": {
+    "kicker": "ÉQUIPE",
+    "title": "Vos spécialistes",
+    "viewAll": "Tout voir",
+    "team": "ÉQUIPE",
+    "focus": "SPÉCIALITÉ",
+    "statusReady": "Disponible",
+    "statusWorking": "En cours",
+    "statusReview": "En attente de validation"
+  },
+  "roles": {
+    "backend": "Architecte Backend",
+    "frontend": "Développeur Frontend",
+    "senior": "Développeur senior",
+    "security": "Ingénieur sécurité applicative",
+    "testing": "Ingénieur automatisation des tests",
+    "reality": "Contrôleur qualité de livraison",
+    "ceo": "Direction générale · Validateur"
+  },
+  "focus": {
+    "backend": "API · schéma · base de données",
+    "frontend": "React · interface · accessibilité",
+    "senior": "Logique · débogage · refactorisation",
+    "security": "Menaces · auth · AppSec",
+    "testing": "Playwright · régression · CI",
+    "reality": "Critères · preuves · livraison",
+    "ceo": "Direction · délégation · validation"
+  },
+  "profiles": {
+    "backend": "Conçoit API, modèles de données et flux backend avec cohérence et compatibilité.",
+    "frontend": "Crée des interfaces accessibles et maintient une expérience cohérente.",
+    "senior": "Résout la logique complexe et propose des changements ciblés et sûrs.",
+    "security": "Évalue les menaces, l’authentification, les autorisations et les données sensibles.",
+    "testing": "Conçoit des tests automatisés fiables et des preuves reproductibles.",
+    "reality": "Contrôle qualité fondé sur des preuves avant la livraison.",
+    "ceo": "Fixe les priorités, délègue et valide. Les changements exigent votre accord."
+  },
+  "profile": {
+    "kicker": "PROFIL DE L'AGENT",
+    "office": "BUREAU",
+    "status": "STATUT",
+    "tasks": "TÂCHES ASSIGNÉES",
+    "noTasks": "Aucune tâche assignée pour le moment.",
+    "assign": "Assigner une tâche",
+    "close": "Fermer"
+  },
+  "hub": {
+    "kicker": "DONNÉES CENTRALES",
+    "title": "Centre de données",
+    "subtitle": "Tous les plans, échanges et décisions passent par ici. Les mises à jour sont synchronisées pour tous les agents ; seuls les responsables participent.",
+    "version": "VERSION",
+    "synced": "AGENTS SYNCHRONISÉS",
+    "threads": "CONVERSATIONS",
+    "filter": "Filtrer par agent",
+    "all": "Tous",
+    "empty": "Aucune conversation pour le moment.",
+    "participants": "Participent",
+    "watching": "Synchronisés, en veille",
+    "noMessages": "En attente du premier message…",
+    "status": {
+      "open": "Ouverte",
+      "synced": "Synchronisée",
+      "closed": "Fermée"
+    },
+    "kind": {
+      "plan": "Plan",
+      "question": "Question",
+      "answer": "Réponse",
+      "handoff": "Passation",
+      "review": "Revue",
+      "decision": "Décision"
+    },
+    "msg": {
+      "plan": "A partagé le plan et réparti le travail.",
+      "question": "Doit clarifier le périmètre et les contraintes avant de continuer.",
+      "answer": "Clarifié ; mise à jour du plan pour tous.",
+      "handoff": "A pris la partie concernée et fera un retour au centre.",
+      "review": "Contrôle qualité terminé ; prêt pour validation.",
+      "approved": "Approuvé. La conversation est close.",
+      "returned": "Renvoyé pour modifications. Le responsable continue."
+    }
+  },
+  "queue": {
+    "kicker": "EN COURS",
+    "title": "File de travail",
+    "all": "Tout",
+    "active": "Actif",
+    "review": "Validation",
+    "open": "Ouvrir toute la file",
+    "empty": "Aucune tâche pour ce filtre."
+  },
+  "taskStatus": {
+    "active": "EN COURS",
+    "review": "EN ATTENTE DE VALIDATION CEO",
+    "complete": "TERMINÉ"
+  },
+  "tasks": {
+    "catalogApi": "Concevoir la pagination de Catalog API",
+    "checkoutTests": "Suite de régression du checkout",
+    "adminAudit": "Vérifier les droits d’accès admin",
+    "newAssignment": "NOUVELLE MISSION",
+    "modalTitle": "Donnez un cap à l’équipe",
+    "label": "Que faut-il accomplir ?",
+    "placeholder": "Ex. : vérifier la connexion et proposer des tests…",
+    "hint": "Choisissez les parties concernées. Gojo prend la tâche par défaut ; les personnes liées travaillent avec lui.",
+    "areaLabel": "Cette tâche concerne quelle partie ?",
+    "ownerLabel": "Responsable suggéré",
+    "defaultOwner": "Par défaut · Senior",
+    "together": "Travaille avec",
+    "togetherNone": "Aucune partie liée. Gojo prendra la tâche.",
+    "ceoSuggests": "Suggestion du CEO",
+    "dispatch": "Demander l’affectation au CEO",
+    "cancel": "Annuler",
+    "approve": "Valider",
+    "requestChanges": "Demander des modifications",
+    "approvalPrompt": "Goku a terminé le contrôle qualité. Valider la livraison ?",
+    "ownerLine": "Responsable"
+  },
+  "executive": {
+    "kicker": "BUREAU EXÉCUTIF",
+    "accessTag": "VOUS · VALIDATEUR",
+    "subtitle": "Vous fixez le cap. Je coordonne.",
+    "note": "Aucune modification n’est publiée sans votre validation. Vous gardez la décision finale.",
+    "review": "Examiner la validation en attente"
+  },
+  "activity": {
+    "kicker": "JOURNAL DE COORDINATION",
+    "title": "Activité récente",
+    "live": "EN DIRECT",
+    "newTask": "Le CEO a reçu une nouvelle tâche",
+    "assigned": "Le CEO a confié le travail à",
+    "arrived": "est arrivé à son poste",
+    "submitted": "a soumis les résultats à votre validation",
+    "seedApi": "Sasuke prépare le contrat de Catalog API",
+    "seedReview": "Goku a envoyé une checklist de livraison",
+    "seedTests": "Levi a terminé les tests de checkout",
+    "justNow": "à l’instant",
+    "minutesAgo": "min"
+  },
+  "messages": {
+    "prototype": "Aperçu prototype · Les réponses et tâches sont simulées. Connectez un fournisseur de modèles pour activer la délégation réelle.",
+    "taskCreated": "Le CEO a attribué la tâche.",
+    "taskApproved": "Validé. Tâche terminée.",
+    "taskReturned": "Modifications demandées. Tâche remise en file.",
+    "noApproval": "Aucune tâche en attente de validation.",
+    "sceneError": "L’aperçu 3D n’est pas disponible dans ce navigateur. L’équipe et les tâches restent accessibles.",
+    "motionReduced": "La réduction des animations est activée.",
+    "motionRestored": "Animations des personnages activées."
+  }
+}

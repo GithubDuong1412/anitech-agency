@@ -1,0 +1,201 @@
+{
+  "app": {
+    "brand": "ANITECH AGENCY",
+    "subtitle": "ĐIỀU HÀNH AGENT",
+    "pageTitle": "Sàn làm việc Studio",
+    "pageSubtitle": "Đội ngũ tinh gọn. Trách nhiệm rõ ràng.",
+    "localeLabel": "Ngôn ngữ"
+  },
+  "navigation": {
+    "workspace": "KHÔNG GIAN LÀM VIỆC",
+    "controlRoom": "Phòng điều hành",
+    "agentRoster": "Đội ngũ Agent",
+    "workQueue": "Hàng đợi công việc"
+  },
+  "dashboard": {
+    "companyLabel": "CÔNG TY AI CỦA BẠN",
+    "livePreview": "BẢN XEM TRỰC TIẾP",
+    "createTask": "Tạo nhiệm vụ",
+    "teamReady": "Đội ngũ sẵn sàng",
+    "teamReadyDetail": "CEO giám sát · 6 chuyên gia đang chờ",
+    "teamWorking": "Đội ngũ đang phối hợp",
+    "teamWorkingDetail": "CEO điều phối · công việc đang được xử lý",
+    "awaitingApproval": "Đang chờ bạn phê duyệt",
+    "activeTasks": "NHIỆM VỤ ĐANG CHẠY",
+    "approvalCount": "CHỜ BẠN PHÊ DUYỆT",
+    "teamOnline": "ĐỘI NGŨ TRỰC TUYẾN"
+  },
+  "office": {
+    "kicker": "SƠ ĐỒ KHÔNG GIAN",
+    "title": "Một Studio, bảy vai trò",
+    "hint": "Chọn nhân vật để xem",
+    "sceneDescription": "Văn phòng 3D isometric với bảy khu vực làm việc và một không gian họp trung tâm.",
+    "rooms": {
+      "backend": "PHÒNG BACKEND",
+      "security": "KHO BẢO MẬT",
+      "frontend": "STUDIO FRONTEND",
+      "senior": "PHÒNG KIẾN TRÚC",
+      "testing": "SÀN KIỂM THỬ",
+      "reality": "CỔNG PHÁT HÀNH",
+      "ceo": "VĂN PHÒNG CEO"
+    },
+    "legendReady": "Sẵn sàng",
+    "legendWorking": "Đang làm",
+    "legendReview": "Chờ duyệt",
+    "zoomLabel": "Phóng sơ đồ",
+    "zoomOut": "Thu nhỏ",
+    "zoomIn": "Phóng to",
+    "zoomReset": "Reset",
+    "zoomAll": "Zoom all",
+    "zoomExit": "Thu gọn"
+  },
+  "roster": {
+    "kicker": "DANH SÁCH ĐỘI NGŨ",
+    "title": "Các chuyên gia của bạn",
+    "viewAll": "Xem tất cả",
+    "team": "ĐỘI NGŨ",
+    "focus": "PHẠM VI CHÍNH",
+    "statusReady": "Sẵn sàng",
+    "statusWorking": "Đang xử lý",
+    "statusReview": "Chờ bạn duyệt"
+  },
+  "roles": {
+    "backend": "Kiến trúc sư Backend",
+    "frontend": "Lập trình viên Frontend",
+    "senior": "Lập trình viên cao cấp",
+    "security": "Kỹ sư bảo mật ứng dụng",
+    "testing": "Kỹ sư tự động hóa kiểm thử",
+    "reality": "Kiểm định chất lượng phát hành",
+    "ceo": "Giám đốc điều hành · Người phê duyệt"
+  },
+  "focus": {
+    "backend": "API · schema · database",
+    "frontend": "React · giao diện · trợ năng",
+    "senior": "Logic nghiệp vụ · debug · refactor",
+    "security": "Threat modeling · auth · AppSec",
+    "testing": "Playwright · regression · CI",
+    "reality": "Tiêu chí · bằng chứng · cổng phát hành",
+    "ceo": "Định hướng · giao việc · phê duyệt"
+  },
+  "profiles": {
+    "backend": "Thiết kế API, mô hình dữ liệu và luồng backend, ưu tiên nhất quán, khả năng mở rộng và tương thích ngược.",
+    "frontend": "Xây dựng giao diện dễ dùng, cải thiện tốc độ render và giữ trải nghiệm nhất quán giữa các trạng thái.",
+    "senior": "Xử lý logic khó và đề xuất thay đổi nhỏ, an toàn; kiểm tra ảnh hưởng trước khi triển khai.",
+    "security": "Rà soát threat model, xác thực, phân quyền và dữ liệu nhạy cảm; báo cáo rủi ro có căn cứ.",
+    "testing": "Xây dựng test tự động ổn định, cô lập dữ liệu và bằng chứng giúp tái hiện lỗi.",
+    "reality": "Quality gate dựa trên bằng chứng: kiểm tra tiêu chí nghiệm thu, test và rủi ro còn lại trước khi phát hành.",
+    "ceo": "Giám sát ưu tiên, phân công và phê duyệt. Thay đổi project và deploy cần bạn xác nhận."
+  },
+  "profile": {
+    "kicker": "HỒ SƠ AGENT",
+    "office": "VĂN PHÒNG",
+    "status": "TRẠNG THÁI",
+    "tasks": "NHIỆM VỤ ĐƯỢC GIAO",
+    "noTasks": "Hiện chưa có nhiệm vụ nào.",
+    "assign": "Giao nhiệm vụ",
+    "close": "Đóng"
+  },
+  "hub": {
+    "kicker": "DỮ LIỆU TRUNG TÂM",
+    "title": "Trung tâm dữ liệu",
+    "subtitle": "Mọi kế hoạch, cuộc trao đổi và quyết định đều đi qua đây. Cập nhật được đồng bộ cho mọi agent; chỉ người có trách nhiệm mới tham gia.",
+    "version": "PHIÊN BẢN",
+    "synced": "AGENT ĐÃ ĐỒNG BỘ",
+    "threads": "CUỘC TRAO ĐỔI",
+    "filter": "Lọc theo agent",
+    "all": "Tất cả",
+    "empty": "Chưa có cuộc trao đổi nào.",
+    "participants": "Đang tham gia",
+    "watching": "Đã đồng bộ, theo dõi",
+    "noMessages": "Đang chờ tin nhắn đầu tiên…",
+    "status": {
+      "open": "Mở",
+      "synced": "Đã đồng bộ",
+      "closed": "Đã đóng"
+    },
+    "kind": {
+      "plan": "Kế hoạch",
+      "question": "Câu hỏi",
+      "answer": "Trả lời",
+      "handoff": "Bàn giao",
+      "review": "Nghiệm thu",
+      "decision": "Quyết định"
+    },
+    "msg": {
+      "plan": "Đã chia sẻ kế hoạch và phân chia công việc.",
+      "question": "Cần làm rõ phạm vi và ràng buộc trước khi tiếp tục.",
+      "answer": "Đã làm rõ; cập nhật kế hoạch cho cả nhóm.",
+      "handoff": "Nhận phần việc liên quan và sẽ báo lại cho trung tâm.",
+      "review": "Đã qua cổng chất lượng; sẵn sàng để duyệt.",
+      "approved": "Đã duyệt. Cuộc trao đổi được đóng.",
+      "returned": "Đã gửi lại để chỉnh sửa. Người phụ trách tiếp tục."
+    }
+  },
+  "queue": {
+    "kicker": "ĐANG DIỄN RA",
+    "title": "Hàng đợi công việc",
+    "all": "Tất cả",
+    "active": "Đang làm",
+    "review": "Chờ duyệt",
+    "open": "Mở toàn bộ hàng đợi",
+    "empty": "Không có nhiệm vụ trong bộ lọc này."
+  },
+  "taskStatus": {
+    "active": "ĐANG LÀM",
+    "review": "CHỜ CEO DUYỆT",
+    "complete": "HOÀN TẤT"
+  },
+  "tasks": {
+    "catalogApi": "Thiết kế pagination cho Catalog API",
+    "checkoutTests": "Bộ test hồi quy checkout",
+    "adminAudit": "Rà soát quyền truy cập quản trị",
+    "newAssignment": "GIAO NHIỆM VỤ MỚI",
+    "modalTitle": "Cho đội ngũ một mục tiêu",
+    "label": "Bạn muốn hoàn thành việc gì?",
+    "placeholder": "Ví dụ: Rà soát luồng đăng nhập và đề xuất test hồi quy…",
+    "hint": "Chọn phần liên quan. Gojo nhận việc mặc định; người khớp phần đó sẽ làm cùng.",
+    "areaLabel": "Task này liên quan đến phần nào?",
+    "ownerLabel": "Người phụ trách đề xuất",
+    "defaultOwner": "Mặc định · Senior",
+    "together": "Làm cùng",
+    "togetherNone": "Chưa có phần liên quan. Gojo sẽ nhận việc.",
+    "ceoSuggests": "CEO đề xuất",
+    "dispatch": "Để CEO phân công",
+    "cancel": "Hủy",
+    "approve": "Phê duyệt",
+    "requestChanges": "Yêu cầu sửa",
+    "approvalPrompt": "Goku đã hoàn tất quality gate. Bạn có muốn duyệt phát hành không?",
+    "ownerLine": "Người phụ trách"
+  },
+  "executive": {
+    "kicker": "BÀN ĐIỀU HÀNH",
+    "accessTag": "BẠN · NGƯỜI DUYỆT",
+    "subtitle": "Bạn định hướng. Tôi điều phối.",
+    "note": "Không thay đổi nào được phát hành khi chưa có bạn duyệt. Hãy giao việc và giữ quyền quyết định cuối cùng.",
+    "review": "Xem nhiệm vụ chờ duyệt"
+  },
+  "activity": {
+    "kicker": "NHẬT KÝ ĐIỀU PHỐI",
+    "title": "Hoạt động gần đây",
+    "live": "TRỰC TIẾP",
+    "newTask": "CEO nhận nhiệm vụ mới",
+    "assigned": "CEO giao việc cho",
+    "arrived": "đã đến khu vực làm việc",
+    "submitted": "đã gửi kết quả để bạn duyệt",
+    "seedApi": "Sasuke đang phác thảo contract cho Catalog API",
+    "seedReview": "Goku gửi checklist phát hành để bạn duyệt",
+    "seedTests": "Levi hoàn tất bộ test hồi quy checkout",
+    "justNow": "vừa xong",
+    "minutesAgo": "phút trước"
+  },
+  "messages": {
+    "prototype": "Bản prototype · Luồng nhiệm vụ và phản hồi Agent đang mô phỏng. Kết nối nhà cung cấp model để bật điều phối trực tiếp.",
+    "taskCreated": "CEO đã phân công nhiệm vụ.",
+    "taskApproved": "Đã phê duyệt. Nhiệm vụ hoàn tất.",
+    "taskReturned": "Đã yêu cầu cập nhật. Nhiệm vụ quay lại hàng đợi.",
+    "noApproval": "Hiện không có nhiệm vụ chờ phê duyệt.",
+    "sceneError": "Trình duyệt chưa hỗ trợ xem 3D. Danh sách Agent và điều khiển nhiệm vụ vẫn dùng được.",
+    "motionReduced": "Đã bật chế độ giảm chuyển động.",
+    "motionRestored": "Đã bật chuyển động nhân vật."
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "app": {
+    "brand": "ANITECH AGENCY",
+    "subtitle": "AGENT 运营台",
+    "pageTitle": "工作室办公区",
+    "pageSubtitle": "精简团队，职责清晰。",
+    "localeLabel": "语言"
+  },
+  "navigation": {
+    "workspace": "工作空间",
+    "controlRoom": "控制室",
+    "agentRoster": "Agent 团队",
+    "workQueue": "任务队列"
+  },
+  "dashboard": {
+    "companyLabel": "你的专属 AI 公司",
+    "livePreview": "实时预览",
+    "createTask": "创建任务",
+    "teamReady": "团队已就绪",
+    "teamReadyDetail": "CEO 监督 · 6 位专家待命",
+    "teamWorking": "团队正在协作",
+    "teamWorkingDetail": "CEO 正在协调 · 任务处理中",
+    "awaitingApproval": "等待你审批",
+    "activeTasks": "进行中的任务",
+    "approvalCount": "等待你审批",
+    "teamOnline": "团队在线"
+  },
+  "office": {
+    "kicker": "办公区地图",
+    "title": "一个工作室，七种角色",
+    "hint": "点击成员查看详情",
+    "sceneDescription": "等距 3D 办公室，包含七个 Agent 工作区和一个中央会议区。",
+    "rooms": {
+      "backend": "后端实验室",
+      "security": "安全中心",
+      "frontend": "前端工作室",
+      "senior": "架构室",
+      "testing": "测试区",
+      "reality": "发布关卡",
+      "ceo": "CEO 办公室"
+    },
+    "legendReady": "待命",
+    "legendWorking": "工作中",
+    "legendReview": "待审批",
+    "zoomLabel": "地图缩放",
+    "zoomOut": "缩小",
+    "zoomIn": "放大",
+    "zoomReset": "重置",
+    "zoomAll": "Zoom all",
+    "zoomExit": "退出全图"
+  },
+  "roster": {
+    "kicker": "团队成员",
+    "title": "你的专家团队",
+    "viewAll": "查看全部",
+    "team": "团队",
+    "focus": "主要职责",
+    "statusReady": "待命",
+    "statusWorking": "处理中",
+    "statusReview": "等待你审批"
+  },
+  "roles": {
+    "backend": "后端架构师",
+    "frontend": "前端开发工程师",
+    "senior": "高级开发工程师",
+    "security": "应用安全工程师",
+    "testing": "测试自动化工程师",
+    "reality": "发布质量审核员",
+    "ceo": "首席执行官 · 审批人"
+  },
+  "focus": {
+    "backend": "API · 数据结构 · 数据库",
+    "frontend": "React · 界面 · 无障碍",
+    "senior": "业务逻辑 · 调试 · 重构",
+    "security": "威胁建模 · 身份验证 · AppSec",
+    "testing": "Playwright · 回归测试 · CI",
+    "reality": "验收条件 · 证据 · 发布关卡",
+    "ceo": "方向 · 委派 · 审批"
+  },
+  "profiles": {
+    "backend": "设计 API、数据模型和后端流程，注重一致性、扩展性和向后兼容。",
+    "frontend": "构建易用的界面，优化渲染并保持各状态体验一致。",
+    "senior": "处理复杂业务逻辑，优先选择安全、范围明确的改动。",
+    "security": "审查威胁模型、身份验证、授权和敏感数据，并提供有依据的风险说明。",
+    "testing": "构建稳定的自动化测试、隔离测试数据和可复现证据。",
+    "reality": "基于证据执行发布质量关卡，检查验收条件、测试和剩余风险。",
+    "ceo": "确定优先级、分配任务并审批。项目修改和部署需要你确认。"
+  },
+  "profile": {
+    "kicker": "代理档案",
+    "office": "办公室",
+    "status": "状态",
+    "tasks": "已分配任务",
+    "noTasks": "目前没有分配任务。",
+    "assign": "分配任务",
+    "close": "关闭"
+  },
+  "hub": {
+    "kicker": "中枢数据",
+    "title": "数据中枢",
+    "subtitle": "所有计划、对话和决策都经由这里。更新会同步给所有智能体，只有相关负责人才会参与。",
+    "version": "版本",
+    "synced": "已同步智能体",
+    "threads": "对话",
+    "filter": "按智能体筛选",
+    "all": "全部",
+    "empty": "暂无对话。",
+    "participants": "参与者",
+    "watching": "已同步，观察中",
+    "noMessages": "等待第一条消息…",
+    "status": {
+      "open": "进行中",
+      "synced": "已同步",
+      "closed": "已关闭"
+    },
+    "kind": {
+      "plan": "计划",
+      "question": "提问",
+      "answer": "回答",
+      "handoff": "交接",
+      "review": "验收",
+      "decision": "决定"
+    },
+    "msg": {
+      "plan": "已分享计划并拆分任务。",
+      "question": "继续之前需要澄清范围和约束。",
+      "answer": "已澄清，正在为大家更新计划。",
+      "handoff": "已接手相关部分，并会向中枢汇报。",
+      "review": "质量关卡已完成，可以审批。",
+      "approved": "已批准，对话关闭。",
+      "returned": "已退回修改，负责人继续处理。"
+    }
+  },
+  "queue": {
+    "kicker": "正在进行",
+    "title": "任务队列",
+    "all": "全部",
+    "active": "进行中",
+    "review": "待审核",
+    "open": "打开完整队列",
+    "empty": "此筛选条件下没有任务。"
+  },
+  "taskStatus": {
+    "active": "进行中",
+    "review": "等待 CEO 审核",
+    "complete": "已完成"
+  },
+  "tasks": {
+    "catalogApi": "为 Catalog API 设计分页",
+    "checkoutTests": "Checkout 回归测试套件",
+    "adminAudit": "检查管理员访问控制",
+    "newAssignment": "新建任务",
+    "modalTitle": "为团队设定目标",
+    "label": "需要完成什么？",
+    "placeholder": "例如：检查登录流程并提出回归测试方案…",
+    "hint": "选择任务相关的部分。默认由 Gojo 负责，相关的人会一起做。",
+    "areaLabel": "这个任务和哪一部分有关？",
+    "ownerLabel": "推荐负责人",
+    "defaultOwner": "默认 · Senior",
+    "together": "一起做",
+    "togetherNone": "还没有相关部分。将交给 Gojo。",
+    "ceoSuggests": "由 CEO 推荐",
+    "dispatch": "请 CEO 分配",
+    "cancel": "取消",
+    "approve": "批准",
+    "requestChanges": "要求修改",
+    "approvalPrompt": "Goku 已完成质量检查。是否批准发布？",
+    "ownerLine": "负责人"
+  },
+  "executive": {
+    "kicker": "管理办公室",
+    "accessTag": "你 · 审批人",
+    "subtitle": "你确定方向，我负责协调。",
+    "note": "未经你批准，不会发布任何更改。任务可以委派，最终决定由你掌握。",
+    "review": "查看待审批事项"
+  },
+  "activity": {
+    "kicker": "调度记录",
+    "title": "最近活动",
+    "live": "实时",
+    "newTask": "CEO 收到新任务",
+    "assigned": "CEO 将任务分配给",
+    "arrived": "已到达工作区",
+    "submitted": "已提交结果，等待你审核",
+    "seedApi": "Sasuke 正在设计 Catalog API 合约",
+    "seedReview": "Goku 已提交发布清单供你审核",
+    "seedTests": "Levi 已完成 checkout 回归测试",
+    "justNow": "刚刚",
+    "minutesAgo": "分钟前"
+  },
+  "messages": {
+    "prototype": "原型预览 · Agent 回复和任务流程为模拟内容。连接模型服务商后可启用实时委派。",
+    "taskCreated": "CEO 已分配任务。",
+    "taskApproved": "已批准，任务完成。",
+    "taskReturned": "已要求修改，任务已返回队列。",
+    "noApproval": "当前没有等待审批的任务。",
+    "sceneError": "此浏览器无法显示 3D 预览。团队列表和任务控制仍可使用。",
+    "motionReduced": "已启用减少动态效果。",
+    "motionRestored": "角色动态已启用。"
+  }
+}
