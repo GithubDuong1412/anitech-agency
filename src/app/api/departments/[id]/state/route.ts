@@ -8,5 +8,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const dept = department(id);
   if (!dept) return Response.json({ error: "not_found" }, { status: 404 });
-  return Response.json(openStore(dept.id).snapshot(), { headers: { "Cache-Control": "no-store" } });
+  const store = await openStore(dept.id);
+  return Response.json(await store.snapshot(), { headers: { "Cache-Control": "no-store" } });
 }

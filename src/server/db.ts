@@ -8,9 +8,53 @@ import type { ActivityRecord, DeptSnapshot } from "@/lib/state";
 import { seedSnapshot } from "@/lib/seed";
 
 /**
- * One SQLite file per department map: data/it.db, data/social.db.
+ * Department storage. MySQL (one shared database, rows split by department_id) when DB_HOST is set.
+ * SQLite files under data/ are only the fallback for machines without MySQL.
  * Server-only. Never import this from a client component.
  */
+
+export interface MysqlConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+}
+
+const DB_NAME = /^[A-Za-z0-9_]+$/;
+
+/** Null when DB_HOST is empty: the app then uses the SQLite fallback. */
+export function mysqlConfig(env: Record<string, string | undefined> = process.env): MysqlConfig | null {
+  const host = env.DB_HOST?.trim();
+  if (!host) return null;
+  const database = env.DB_NAME?.trim() || "anitech_agency";
+  if (!DB_NAME.test(database)) throw new Error("DB_NAME may only contain letters, numbers and underscore");
+  const port = Number(env.DB_PORT);
+  return {
+    host,
+    port: Number.isFinite(port) && port > 0 ? port : 3306,
+    user: env.DB_USER?.trim() || "root",
+    password: env.DB_PASSWORD ?? "",
+    database,
+  };
+}
+
+export function dbEngine(env: Record<string, string | undefined> = process.env): "mysql" | "sqlite" {
+  return env.DB_HOST?.trim() ? "mysql" : "sqlite";
+}
+
+export interface DeptStore {
+  readonly departmentId: DepartmentId;
+  tasks(): Promise<Task[]>;
+  getTask(id: string): Promise<Task | undefined>;
+  saveTask(task: Task): Promise<void>;
+  addActivity(input: Omit<ActivityRecord, "id">, at?: number): Promise<ActivityRecord>;
+  activities(limit?: number): Promise<ActivityRecord[]>;
+  hub(): Promise<HubState>;
+  commitHub(previous: HubState, next: HubState): Promise<void>;
+  snapshot(): Promise<DeptSnapshot>;
+  close(): Promise<void>;
+}
 
 export function isDepartmentId(value: unknown): value is DepartmentId {
   return typeof value === "string" && (DEPARTMENT_IDS as readonly string[]).includes(value);
@@ -20,7 +64,7 @@ const SCHEMA = `
 create table if not exists meta (key text primary key, value text not null);
 create table if not exists tasks (
   id text primary key, title_key text not null, title text, owner_id text not null,
-  status text not null, progress integer not null, created_at integer not null
+  status text not null, run_mode text, provider text, model text, progress integer not null, created_at integer not null
 );
 create table if not exists threads (
   id text primary key, task_id text, topic_key text, topic_title text, status text not null
@@ -43,7 +87,7 @@ create index if not exists messages_thread on messages (thread_id);
 type Row = Record<string, unknown>;
 const str = (value: unknown) => (value === null || value === undefined ? undefined : String(value));
 
-export class Store {
+export class Store implements DeptStore {
   readonly departmentId: DepartmentId;
   private readonly db: DatabaseSync;
 
@@ -54,11 +98,19 @@ export class Store {
     this.db = new DatabaseSync(location);
     this.db.exec("pragma journal_mode = WAL; pragma foreign_keys = on;");
     this.db.exec(SCHEMA);
+    this.migrateTasks();
     this.seedOnce();
   }
 
-  close() {
+  async close() {
     this.db.close();
+  }
+
+  private migrateTasks() {
+    const columns = new Set((this.db.prepare("pragma table_info(tasks)").all() as Row[]).map((row) => String(row.name)));
+    if (!columns.has("run_mode")) this.db.exec("alter table tasks add column run_mode text");
+    if (!columns.has("provider")) this.db.exec("alter table tasks add column provider text");
+    if (!columns.has("model")) this.db.exec("alter table tasks add column model text");
   }
 
   private depth = 0;
@@ -114,37 +166,40 @@ export class Store {
       title: str(row.title),
       ownerId: String(row.owner_id),
       status: String(row.status) as TaskStatus,
+      runMode: row.run_mode === "ai" || row.run_mode === "demo" ? row.run_mode : undefined,
+      provider: str(row.provider),
+      model: str(row.model),
       progress: Number(row.progress),
       createdAt: Number(row.created_at),
     };
   }
 
-  tasks(): Task[] {
+  async tasks(): Promise<Task[]> {
     return (this.db.prepare("select * from tasks order by rowid").all() as Row[]).map((row) => this.toTask(row));
   }
 
-  getTask(id: string): Task | undefined {
+  async getTask(id: string): Promise<Task | undefined> {
     const row = this.db.prepare("select * from tasks where id = ?").get(id) as Row | undefined;
     return row ? this.toTask(row) : undefined;
   }
 
-  saveTask(task: Task) {
+  async saveTask(task: Task) {
     this.db.prepare(
-      `insert into tasks (id, title_key, title, owner_id, status, progress, created_at) values (?, ?, ?, ?, ?, ?, ?)
+      `insert into tasks (id, title_key, title, owner_id, status, run_mode, provider, model, progress, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict(id) do update set title_key = excluded.title_key, title = excluded.title, owner_id = excluded.owner_id,
-         status = excluded.status, progress = excluded.progress`,
-    ).run(task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, Math.round(task.progress), task.createdAt);
+         status = excluded.status, run_mode = excluded.run_mode, provider = excluded.provider, model = excluded.model, progress = excluded.progress`,
+    ).run(task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, task.runMode ?? null, task.provider ?? null, task.model ?? null, Math.round(task.progress), task.createdAt);
   }
 
   // ---- activities --------------------------------------------------------
 
-  addActivity(input: Omit<ActivityRecord, "id">, at = Date.now()): ActivityRecord {
+  async addActivity(input: Omit<ActivityRecord, "id">, at = Date.now()): Promise<ActivityRecord> {
     const result = this.db.prepare("insert into activities (type, agent_id, message_key, created_at) values (?, ?, ?, ?)")
       .run(input.type, input.agentId ?? null, input.messageKey ?? null, at);
     return { ...input, id: "activity-db-" + String(result.lastInsertRowid) };
   }
 
-  activities(limit = 6): ActivityRecord[] {
+  async activities(limit = 6): Promise<ActivityRecord[]> {
     return (this.db.prepare("select * from activities order by id desc limit ?").all(limit) as Row[]).map((row) => ({
       id: "activity-db-" + String(row.id),
       type: String(row.type) as ActivityRecord["type"],
@@ -155,7 +210,7 @@ export class Store {
 
   // ---- hub ---------------------------------------------------------------
 
-  hub(): HubState {
+  async hub(): Promise<HubState> {
     const participants = new Map<string, string[]>();
     for (const row of this.db.prepare("select thread_id, agent_id from thread_participants order by position").all() as Row[]) {
       const list = participants.get(String(row.thread_id)) ?? [];
@@ -184,7 +239,7 @@ export class Store {
   }
 
   /** Write only what changed between two hub states: new threads, thread edits, new messages, the version. */
-  commitHub(previous: HubState, next: HubState) {
+  async commitHub(previous: HubState, next: HubState) {
     const before = new Map(previous.threads.map((thread) => [thread.id, thread]));
     const knownMessages = new Set(previous.messages.map((message) => message.id));
     const writeParticipants = (thread: HubThread) => {
@@ -214,24 +269,46 @@ export class Store {
     });
   }
 
-  snapshot(): DeptSnapshot {
-    return { tasks: this.tasks(), activities: this.activities(), hub: this.hub() };
+  async snapshot(): Promise<DeptSnapshot> {
+    return { tasks: await this.tasks(), activities: await this.activities(), hub: await this.hub() };
   }
 }
 
-const globalStores = globalThis as unknown as { __anitechStores?: Map<DepartmentId, Store> };
+const globalStores = globalThis as unknown as { __anitechStores?: Map<DepartmentId, Promise<DeptStore>> };
 
 function dataDir(): string {
   return process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(process.cwd(), "data");
 }
 
-/** Shared connection per department. Kept on globalThis so dev hot reloads do not reopen the file. */
-export function openStore(id: DepartmentId): Store {
+let announced = false;
+
+/**
+ * One store per department, kept on globalThis so dev hot reloads reuse the connection.
+ * MySQL when DB_HOST is set; otherwise the SQLite fallback.
+ */
+export function openStore(id: DepartmentId): Promise<DeptStore> {
   const stores = (globalStores.__anitechStores ??= new Map());
   let store = stores.get(id);
   if (!store) {
-    store = new Store(id, path.join(dataDir(), `${id}.db`));
+    store = openFresh(id);
     stores.set(id, store);
   }
   return store;
+}
+
+async function openFresh(id: DepartmentId): Promise<DeptStore> {
+  const config = mysqlConfig();
+  if (config) {
+    const { openMysqlStore } = await import("./mysql");
+    if (!announced) {
+      announced = true;
+      console.info(`[db] MySQL ${config.host}:${config.port}/${config.database}`);
+    }
+    return openMysqlStore(id, config);
+  }
+  if (!announced) {
+    announced = true;
+    console.warn(`[db] DB_HOST is not set, using the SQLite fallback in ${dataDir()}`);
+  }
+  return new Store(id, path.join(dataDir(), `${id}.db`));
 }

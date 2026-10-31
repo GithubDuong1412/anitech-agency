@@ -1,10 +1,11 @@
 import fs from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { IT, SOCIAL } from "@/lib/roster";
 import type { RunEvent } from "@/lib/state";
-import { Store } from "@/server/db";
+import { dbEngine, mysqlConfig, Store } from "@/server/db";
 import { createLlmClient, llmConfig, type ChatMessage, type LlmClient } from "@/server/llm";
 import { buildSystemPrompt, loadPersona } from "@/server/persona";
 import { parseTurn, runNewTask, runResolve, type RunDeps } from "@/server/orchestrator";
@@ -37,9 +38,29 @@ function setup(department = IT, llm: LlmClient | null = null, extra: Partial<Run
 }
 
 describe("database", () => {
-  it("seeds each department with its own demo data", () => {
-    const it = new Store("it", ":memory:").snapshot();
-    const social = new Store("social", ":memory:").snapshot();
+  it("migrates an existing SQLite task table without losing legacy records", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "anitech-migrate-"));
+    const file = path.join(dir, "it.db");
+    const legacy = new DatabaseSync(file);
+    legacy.exec(`create table tasks (
+      id text primary key, title_key text not null, title text, owner_id text not null,
+      status text not null, progress integer not null, created_at integer not null
+    );
+    insert into tasks (id, title_key, title, owner_id, status, progress, created_at)
+      values ('task-legacy', 'custom', 'Legacy task', 'sasuke', 'review', 100, 1);`);
+    legacy.close();
+
+    const store = new Store("it", file);
+    const task = await store.getTask("task-legacy");
+    expect(task).toMatchObject({ id: "task-legacy", title: "Legacy task", status: "review" });
+    await store.saveTask({ ...task!, runMode: "ai", provider: "openai-compatible", model: "test-model" });
+    expect(await store.getTask("task-legacy")).toMatchObject({ runMode: "ai", provider: "openai-compatible", model: "test-model" });
+    await store.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+  it("seeds each department with its own demo data", async () => {
+    const it = await new Store("it", ":memory:").snapshot();
+    const social = await new Store("social", ":memory:").snapshot();
     expect(it.tasks.map((task) => task.id)).toEqual(["task-1", "task-2"]);
     expect(social.tasks.map((task) => task.id)).toEqual(["task-s1", "task-s2"]);
     expect(it.hub.messages.length).toBeGreaterThan(0);
@@ -52,24 +73,25 @@ describe("database", () => {
     const first = new Store("it", file);
     const events: RunEvent[] = [];
     const { llm } = fakeLlm();
-    await runNewTask({ store: first, dept: IT, llm, locale: "vi", emit: (e) => events.push(e), delayMs: 0 }, { title: "Thiết kế api cho catalog", ownerId: "sasuke" });
-    const before = first.snapshot();
-    first.close();
+    await runNewTask({ store: first, dept: IT, llm, model: "test-model", locale: "vi", emit: (e) => events.push(e), delayMs: 0 }, { title: "Thiết kế api cho catalog", ownerId: "sasuke" });
+    const before = await first.snapshot();
+    await first.close();
 
     const second = new Store("it", file);
-    const after = second.snapshot();
+    const after = await second.snapshot();
     expect(after.tasks).toEqual(before.tasks);
+    expect(after.tasks.at(-1)).toMatchObject({ runMode: "ai", provider: "openai-compatible", model: "test-model" });
     expect(after.hub.messages).toEqual(before.hub.messages);
     expect(after.hub.threads).toEqual(before.hub.threads);
     expect(after.hub.messages.some((message) => message.text?.startsWith("Trả lời từ"))).toBe(true);
-    second.close();
+    await second.close();
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
   it("does not mix data between departments", async () => {
     const { deps } = setup(IT, fakeLlm().llm);
     await runNewTask(deps, { title: "Viết api", ownerId: "sasuke" });
-    const social = new Store("social", ":memory:").snapshot();
+    const social = await new Store("social", ":memory:").snapshot();
     expect(social.tasks).toHaveLength(2);
     expect(social.hub.threads.every((thread) => thread.participants.every((id) => SOCIAL.agents.some((agent) => agent.id === id)))).toBe(true);
   });
@@ -87,8 +109,9 @@ describe("agents with a model", () => {
       expect(call.system).not.toContain("zebra-xyz");
       expect(call.user).toContain("<task>Thiết kế api zebra-xyz và kiểm thử</task>");
     }
-    const last = store.tasks().at(-1)!;
+    const last = (await store.tasks()).at(-1)!;
     expect(last.status).toBe("review");
+    expect(last.runMode).toBe("ai");
   });
 
   it("agents see what teammates already said", async () => {
@@ -104,8 +127,9 @@ describe("agents with a model", () => {
     const { llm, calls } = fakeLlm({ ask: everyone });
     const { deps, store } = setup(IT, llm);
     await runNewTask(deps, { title: "Viết api bảo mật kiểm thử giao diện", ownerId: "sasuke", areas: everyone });
-    const thread = store.hub().threads.at(-1)!;
-    const messages = store.hub().messages.filter((message) => message.threadId === thread.id);
+    const hub = await store.hub();
+    const thread = hub.threads.at(-1)!;
+    const messages = hub.messages.filter((message) => message.threadId === thread.id);
     expect(messages.length).toBeLessThanOrEqual(8);
     expect(calls.length).toBeLessThanOrEqual(8);
     const perAgent = new Map<string, number>();
@@ -118,9 +142,10 @@ describe("agents with a model", () => {
     const { llm } = fakeLlm({ ask: ["duongtang", "ghost", "levi"] });
     const { deps, store } = setup(IT, llm);
     await runNewTask(deps, { title: "Viết api", ownerId: "sasuke" });
-    const speakers = new Set(store.hub().messages.filter((message) => message.text).map((message) => message.from));
+    const hub = await store.hub();
+    const speakers = new Set(hub.messages.filter((message) => message.text).map((message) => message.from));
     for (const id of speakers) expect(IT.agents.some((agent) => agent.id === id)).toBe(true);
-    const thread = store.hub().threads.at(-1)!;
+    const thread = hub.threads.at(-1)!;
     expect(thread.participants).not.toContain("duongtang");
     expect(thread.participants).not.toContain("ghost");
   });
@@ -135,12 +160,12 @@ describe("agents with a model", () => {
     }
   });
 
-  it("falls back to a visible message and a task waiting for review when the model fails", async () => {
+  it("marks a failed model run visibly without sending it for approval", async () => {
     const { llm } = fakeLlm({ fail: true });
     const { deps, store, events } = setup(IT, llm);
     await runNewTask(deps, { title: "Viết api", ownerId: "sasuke" });
-    expect(store.tasks().at(-1)!.status).toBe("review");
-    expect(store.hub().messages.some((message) => message.textKey === "hub.msg.llmError")).toBe(true);
+    expect((await store.tasks()).at(-1)!.status).toBe("failed");
+    expect((await store.hub()).messages.some((message) => message.textKey === "hub.msg.llmError")).toBe(true);
     expect(events.some((event) => event.type === "error")).toBe(true);
   });
 
@@ -148,21 +173,26 @@ describe("agents with a model", () => {
     const { llm } = fakeLlm();
     const { deps, store } = setup(IT, llm);
     await runNewTask(deps, { title: "Viết api", ownerId: "sasuke" });
-    const task = store.tasks().at(-1)!;
+    const task = (await store.tasks()).at(-1)!;
 
     await runResolve(deps, task.id, "changes", "thêm phân trang");
-    expect(store.getTask(task.id)!.status).toBe("review");
-    expect(store.hub().messages.filter((message) => message.threadId === "thread-" + task.id).length).toBeGreaterThan(5);
+    expect((await store.getTask(task.id))!.status).toBe("review");
+    expect((await store.hub()).messages.filter((message) => message.threadId === "thread-" + task.id).length).toBeGreaterThan(5);
 
     await runResolve(deps, task.id, "approve");
-    expect(store.getTask(task.id)!.status).toBe("complete");
-    expect(store.hub().threads.find((thread) => thread.id === "thread-" + task.id)!.status).toBe("closed");
+    expect((await store.getTask(task.id))!.status).toBe("complete");
+    expect((await store.hub()).threads.find((thread) => thread.id === "thread-" + task.id)!.status).toBe("closed");
+  });
+
+  it("applies bounded timeout and turn settings from the environment", () => {
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_TIMEOUT_MS: "200000", LLM_MAX_TURNS: "99" })).toMatchObject({ timeoutMs: 120_000, maxTurns: 16 });
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_TIMEOUT_MS: "200", LLM_MAX_TURNS: "2" })).toMatchObject({ timeoutMs: 45_000, maxTurns: 8 });
   });
 
   it("reads json even when the model wraps it in text", () => {
     const turn = parseTurn('Đây: {"kind":"handoff","text":"Chuyển cho Levi","ask":["levi","levi","ghost"]}', "answer", new Set(["handoff", "answer"]), IT, "sasuke");
     expect(turn).toEqual({ kind: "handoff", text: "Chuyển cho Levi", ask: ["levi"] });
-    expect(parseTurn("chỉ là văn bản", "answer", new Set(["answer"]), IT, "sasuke").text).toBe("chỉ là văn bản");
+    expect(() => parseTurn("chỉ là văn bản", "answer", new Set(["answer"]), IT, "sasuke")).toThrow(/invalid JSON/);
     expect(parseTurn('{"kind":"decision","text":"x"}', "answer", new Set(["answer"]), IT, "sasuke").kind).toBe("answer");
   });
 });
@@ -171,18 +201,33 @@ describe("demo mode", () => {
   it("runs the same pipeline without a key and still saves everything", async () => {
     const { deps, store } = setup(SOCIAL, null);
     await runNewTask(deps, { title: "Viết caption", ownerId: "duongtang" });
-    const task = store.tasks().at(-1)!;
+    const task = (await store.tasks()).at(-1)!;
     expect(task.status).toBe("review");
-    expect(store.hub().messages.some((message) => message.threadId === "thread-" + task.id && message.textKey)).toBe(true);
+    expect(task.runMode).toBe("demo");
+    expect(task.provider).toBeUndefined();
+    expect((await store.hub()).messages.some((message) => message.threadId === "thread-" + task.id && message.textKey)).toBe(true);
+  });
+});
+
+describe("database choice", () => {
+  it("uses mysql only when DB_HOST is set, and rejects a database name that is not a plain identifier", () => {
+    expect(dbEngine({})).toBe("sqlite");
+    expect(mysqlConfig({})).toBeNull();
+    expect(dbEngine({ DB_HOST: "127.0.0.1" })).toBe("mysql");
+    expect(mysqlConfig({ DB_HOST: " 127.0.0.1 ", DB_PORT: "3307", DB_USER: "root", DB_PASSWORD: "", DB_NAME: "anitech_agency" })).toEqual({
+      host: "127.0.0.1", port: 3307, user: "root", password: "", database: "anitech_agency",
+    });
+    expect(mysqlConfig({ DB_HOST: "127.0.0.1" })?.database).toBe("anitech_agency");
+    expect(() => mysqlConfig({ DB_HOST: "127.0.0.1", DB_NAME: "bad-name" })).toThrow(/DB_NAME/);
   });
 });
 
 describe("llm client", () => {
-  const config = { apiKey: "sk-secret", baseUrl: "http://llm.test/v1", model: "m", jsonMode: true, maxTokens: 100 };
+  const config = { apiKey: "sk-secret", baseUrl: "http://llm.test/v1", model: "m", jsonMode: true, maxTokens: 100, timeoutMs: 45_000, maxTurns: 8 };
 
   it("is off without a key and reads settings from the environment", () => {
     expect(llmConfig({})).toBeNull();
-    expect(llmConfig({ LLM_API_KEY: " k ", LLM_BASE_URL: "http://x/v1/", LLM_MODEL: "z", LLM_JSON_MODE: "false" })).toMatchObject({ apiKey: "k", baseUrl: "http://x/v1", model: "z", jsonMode: false });
+    expect(llmConfig({ LLM_API_KEY: " k ", LLM_BASE_URL: "http://x/v1/", LLM_MODEL: "z", LLM_JSON_MODE: "false" })).toMatchObject({ apiKey: "k", baseUrl: "http://x/v1", model: "z", jsonMode: false, timeoutMs: 45_000, maxTurns: 8 });
   });
 
   it("retries once without json mode when the provider rejects it, and never leaks the key in errors", async () => {

@@ -214,6 +214,7 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .presence-dot.active, .status-bullet.active { background: var(--cyan); }
 .presence-dot.review, .status-bullet.review { background: var(--amber); }
 .presence-dot.complete, .status-bullet.complete { background: #9fb0a5; }
+.presence-dot.failed, .status-bullet.failed { background: #ef8888; }
 .agent-info { min-width: 0; }
 .agent-info b { display: block; overflow: hidden; font-size: 0.875rem; white-space: nowrap; text-overflow: ellipsis; }
 .agent-info small { display: block; overflow: hidden; margin-top: 2px; color: var(--color-ink-3); font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; }
@@ -248,6 +249,7 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .task-marker { width: 0.4375rem; height: 0.4375rem; margin-top: 0.25rem; border-radius: 2px; background: var(--cyan); box-shadow: 0 0 0.5rem #7bd9ca50; }
 .task-item.review .task-marker { background: var(--amber); box-shadow: 0 0 0.5rem #efc67b55; }
 .task-item.complete .task-marker { background: #a8c970; box-shadow: none; }
+.task-item.failed .task-marker { background: #ef8888; box-shadow: 0 0 0.5rem #ef888855; }
 .task-copy { min-width: 0; }
 .task-copy strong { display: block; color: #dce4da; font-size: 0.8125rem; font-weight: 700; line-height: 1.45; }
 .task-copy small { display: flex; align-items: center; gap: 0.3125rem; margin-top: 0.25rem; color: var(--color-ink-3); font-size: 0.75rem; line-height: 1.4; }
@@ -255,6 +257,7 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .task-state { max-width: 5.875rem; color: #8edac9; font: 0.7188rem var(--font-mono); text-align: right; }
 .task-item.review .task-state { color: #e9c37a; }
 .task-item.complete .task-state { color: #b3d668; }
+.task-item.failed .task-state { color: #ef9999; }
 .task-progress { grid-column: 2 / 4; height: 2px; overflow: hidden; margin-top: -1px; border-radius: 0.1875rem; background: #2e3b39; }
 .task-progress span { display: block; height: 100%; border-radius: inherit; background: var(--cyan); transition: width .3s; }
 .task-item.review .task-progress span { background: var(--amber); }
@@ -270,6 +273,7 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .profile-status { padding: 0.1875rem 0.3125rem; border: 1px solid #485844; border-radius: 0.1875rem; color: #b5cb85; font: 0.7188rem var(--font-mono); }
 .profile-status.active { border-color: #3b776d; color: var(--cyan); }
 .profile-status.review { border-color: #806940; color: var(--amber); }
+.profile-status.failed { border-color: #854f4f; color: #ef9999; }
 .profile-divider { border-top: 1px solid var(--color-line-soft); }
 .profile-detail { display: grid; gap: 0.25rem; margin-top: 0.5625rem; }
 .profile-detail span { color: var(--color-ink-3); font: 0.75rem var(--font-mono); letter-spacing: .06em; }
@@ -386,6 +390,7 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .profile-detail-wide { grid-column: 1 / -1; }
 .profile-status-text.active { color: var(--cyan); }
 .profile-status-text.review { color: var(--amber); }
+.profile-status-text.failed { color: #ef9999; }
 .profile-task-list { display: grid; gap: 0.375rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
 .profile-task-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; padding: 0.5rem 0.625rem; border: 1px solid var(--color-line-soft); border-left: 0.1875rem solid var(--cyan); border-radius: 0.3125rem; background: #162120; font-size: 0.875rem; }
 .profile-task-list li.review { border-left-color: var(--amber); }
