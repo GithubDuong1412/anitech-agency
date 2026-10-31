@@ -83,6 +83,9 @@ export default function AgencyDashboard() {
   const [toast, setToast] = useState("");
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
+  const [hubTaskId, setHubTaskId] = useState<string | null>(null);
+  const [rosterOpen, setRosterOpen] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [model, setModel] = useState<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite" } | null>(null);
   const [running, setRunning] = useState<Record<DepartmentId, boolean>>({ it: false, social: false });
@@ -371,9 +374,20 @@ export default function AgencyDashboard() {
     document.getElementById("agents")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest" });
   }
 
-  function showWorkQueue(event: { preventDefault: () => void }) {
-    event.preventDefault();
-    document.getElementById("work-queue")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+  function openHub(taskId?: string) {
+    setHubTaskId(taskId ?? null);
+    setHubOpen(true);
+  }
+
+  function taskTitleOf(task: Task) {
+    return task.titleKey === "custom" ? task.title ?? "" : t("tasks." + task.titleKey);
+  }
+
+  function taskCrew(task: Task) {
+    const thread = hub.threads.find((item) => item.taskId === task.id);
+    const owner = getAgent(task.ownerId)?.name ?? task.ownerId;
+    const withOwner = (thread?.participants ?? []).filter((id) => id !== task.ownerId).map((id) => getAgent(id)?.name).filter(Boolean);
+    return withOwner.length > 0 ? `${owner} | ${withOwner.join(", ")}` : owner;
   }
 
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) ?? ceo;
@@ -395,7 +409,7 @@ export default function AgencyDashboard() {
   }
 
   return (
-    <MotionConfig reducedMotion="user"><LazyMotion features={domAnimation} strict><div className="min-h-screen">
+    <MotionConfig reducedMotion="user"><LazyMotion features={domAnimation} strict><div className="app-shell">
       <aside className="sidebar" aria-label={t("navigation.controlRoom")}>
         <a className="brand" href="#overview" aria-label={t("app.brand")}>
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
@@ -412,13 +426,28 @@ export default function AgencyDashboard() {
               })}
             </div>
           </div>
-          <div className="nav-group nav-group-agents">
-            <a className="nav-item" href="#agents"><span className="nav-icon" aria-hidden="true">◉</span><span>{t("navigation.agentRoster")}</span><span className="nav-count">{String(agents.length).padStart(2, "0")}</span></a>
-            <div className="nav-sub" aria-label={t("navigation.agentRoster")}>
+          <div className={"nav-group" + (rosterOpen ? " is-open" : "")}>
+            <button type="button" className={"nav-item" + (rosterOpen ? " is-open" : "")} aria-expanded={rosterOpen} onClick={() => setRosterOpen((value) => !value)}>
+              <span className="nav-icon" aria-hidden="true">◉</span><span>{t("navigation.agentRoster")}</span><span className="nav-caret" aria-hidden="true" /><span className="nav-count">{String(agents.length).padStart(2, "0")}</span>
+            </button>
+            {rosterOpen && <div className="nav-sub" aria-label={t("navigation.agentRoster")}>
               {agents.map((agent) => <button type="button" key={agent.id} className={"nav-sub-item" + (selectedAgentId === agent.id ? " is-on" : "")} aria-pressed={selectedAgentId === agent.id} onClick={() => showAgent(agent.id)}><span className="nav-sub-label">{agent.name}</span></button>)}
-            </div>
+            </div>}
           </div>
-          <a className="nav-item" href="#work-queue" onClick={showWorkQueue}><span className="nav-icon" aria-hidden="true">▤</span><span>{t("navigation.workQueue")}</span><span className="nav-count">{String(tasks.length).padStart(2, "0")}</span></a>
+          <div className={"nav-group" + (queueOpen ? " is-open" : "")}>
+            <button type="button" className={"nav-item" + (queueOpen ? " is-open" : "")} aria-expanded={queueOpen} onClick={() => setQueueOpen((value) => !value)}>
+              <span className="nav-icon" aria-hidden="true">▤</span><span>{t("navigation.workQueue")}</span><span className="nav-caret" aria-hidden="true" /><span className="nav-count">{String(tasks.length).padStart(2, "0")}</span>
+            </button>
+            {queueOpen && <div className="nav-sub nav-tasks" aria-label={t("navigation.workQueue")}>
+              {tasks.length === 0 && <p className="nav-task-empty">{t("queue.empty")}</p>}
+              {[...tasks].reverse().map((task) => (
+                <button type="button" key={task.id} className="nav-task" onClick={() => openHub(task.id)}>
+                  <strong>{taskTitleOf(task)}</strong>
+                  <small><em className={task.status}>{t("taskStatus." + task.status)}</em>{taskCrew(task)}</small>
+                </button>
+              ))}
+            </div>}
+          </div>
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-card"><span className="connection-dot" /><span><b>DEMO</b><small>Model API · offline</small></span><span className="connection-slash">/</span></div>
@@ -437,7 +466,7 @@ export default function AgencyDashboard() {
         </div>
       </aside>
 
-      <main id="overview" className={"@container/main ml-sidebar px-[clamp(1.25rem,2.4vw,3.5rem)] pb-5 max-[900px]:ml-sidebar-compact max-[620px]:ml-0 max-[620px]:px-3.5 max-[620px]:pb-[4.9rem]" + (mapExpanded ? " is-map-focus" : "")}>
+      <main id="overview" className={"stage @container/main" + (mapExpanded ? " is-map-focus" : "")}>
         <header className="topbar">
           <div className="breadcrumbs"><span>{t("app.brand")}</span><span className="crumb-sep">/</span><b>{t("navigation.controlRoom")}</b></div>
           <span className="live-label"><i />{t("dashboard.livePreview")}</span>
@@ -455,7 +484,7 @@ export default function AgencyDashboard() {
           <div className="status-metric flex min-h-9 flex-col justify-center gap-0.5 @2xl/main:border-l @2xl/main:border-[#34413e] @2xl/main:pl-3"><span>{t("dashboard.teamOnline")}</span><b>{String(agents.length).padStart(2, "0")} / {String(agents.length).padStart(2, "0")}</b></div>
         </section>
 
-        <div className="dashboard-grid grid grid-cols-1 items-start gap-[clamp(1rem,1.6vw,1.75rem)] @4xl/main:grid-cols-[minmax(0,1fr)_var(--spacing-rail)]">
+        <div className="dashboard-grid">
           <section className="office-column" aria-labelledby="office-heading">
             <div className="section-heading">
               <div><span className="section-kicker">{t("office.kicker")}</span><h2 id="office-heading">{t("office.title", { count: agents.length })}</h2></div>
@@ -493,7 +522,7 @@ export default function AgencyDashboard() {
                       onAgentOpen={(agentId) => handleAgentOpen(dept.id, agentId)}
                       talkingIds={view.talkingIds}
                       syncPulse={view.syncPulse}
-                      onHubOpen={() => setHubOpen(true)}
+                      onHubOpen={() => openHub()}
                       hubLabel={t("hub.title")}
                       scene={dept.map}
                       zoomApiRef={dept.id === "it" ? itZoomRef : socialZoomRef}
@@ -521,7 +550,7 @@ export default function AgencyDashboard() {
             </section>
           </section>
 
-          <aside className="dashboard-rail @container/rail grid grid-cols-1 items-start gap-3.5 @xl/rail:grid-cols-2 max-[620px]:gap-2.5">
+          <aside className="dashboard-rail">
             <m.section {...rise(0)} className="ceo-card" aria-labelledby="ceo-card-title">
               <div className="card-topline"><span className="section-kicker">{t("executive.kicker")}</span><span className="access-tag">{t("executive.accessTag")}</span></div>
               <div className="ceo-profile"><span className="ceo-avatar" style={avatarStyle(ceo)} aria-hidden="true">{ceo.name.slice(0, 1)}</span><div><h2 id="ceo-card-title">{ceo.name}</h2><p>{t("executive.subtitle")}</p></div></div>
@@ -561,13 +590,13 @@ export default function AgencyDashboard() {
               <p className="profile-description">{t("profiles." + selectedAgent.role)}</p>
             </m.section>
 
-            <m.section {...rise(3)} className="activity-card @xl/rail:col-start-2 @xl/rail:row-span-2 @xl/rail:row-start-1" aria-labelledby="activity-title">
+            <m.section {...rise(3)} className="activity-card" aria-labelledby="activity-title">
               <div className="section-heading compact-heading"><div><span className="section-kicker">{t("activity.kicker")}</span><h2 id="activity-title">{t("activity.title")}</h2></div><span className="activity-live"><i />{t("activity.live")}</span></div>
               <ol className="activity-list">
                 {activities.map((entry) => <li key={entry.id}><span className="activity-pin" /><div><p>{renderActivity(entry)}</p><time>{t("activity.justNow")}</time></div></li>)}
               </ol>
             </m.section>
-            {!model?.llm && <div className="privacy-note @xl/rail:col-span-full"><span aria-hidden="true">◈</span><p>{t("messages.prototype")}</p></div>}
+            {!model?.llm && <div className="privacy-note"><span aria-hidden="true">◈</span><p>{t("messages.prototype")}</p></div>}
           </aside>
         </div>
         <footer className="app-footer"><span>ANITECH AGENCY / AGENT OPERATIONS</span><span>{model === null ? "" : model.llm ? t("footer.modelLive", { model: model.model ?? "" }) : t("footer.modelDemo")}{model?.db ? ` · ${t("footer.database", { engine: model.db === "mysql" ? "MySQL" : "SQLite" })}` : ""} · BUILD 0.1.0 · PRIVATE PROTOTYPE</span></footer>
@@ -647,7 +676,7 @@ export default function AgencyDashboard() {
           </div>
         </div>}
       </dialog>
-      <HubDialog open={hubOpen} onClose={() => setHubOpen(false)} hub={hub} agents={agents} talkingIds={talkingIds} t={t} />
+      <HubDialog open={hubOpen} taskId={hubTaskId} onClose={() => { setHubOpen(false); setHubTaskId(null); }} hub={hub} agents={agents} talkingIds={talkingIds} t={t} />
       <div className="toast" role="status" aria-live="polite">{toast}</div>
     </div>
     </LazyMotion></MotionConfig>
