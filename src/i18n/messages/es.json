@@ -181,7 +181,8 @@
   "taskStatus": {
     "active": "EN CURSO",
     "review": "ESPERANDO REVISIÓN DEL CEO",
-    "complete": "COMPLETADA"
+    "complete": "COMPLETADA",
+    "failed": "FALLIDA"
   },
   "tasks": {
     "catalogApi": "Diseñar paginación para Catalog API",
@@ -208,7 +209,9 @@
     "approve": "Aprobar",
     "requestChanges": "Solicitar cambios",
     "approvalPrompt": "Goku completó el control de calidad. ¿Apruebas el lanzamiento?",
-    "ownerLine": "Responsable"
+    "ownerLine": "Responsable",
+    "executionAi": "IA · {model}",
+    "executionDemo": "Modo demo"
   },
   "executive": {
     "kicker": "DESPACHO EJECUTIVO",
@@ -249,6 +252,7 @@
   },
   "footer": {
     "modelLive": "MODELO {model}",
-    "modelDemo": "MODO DEMO (SIN MODELO)"
+    "modelDemo": "MODO DEMO (SIN MODELO)",
+    "database": "DB {engine}"
   }
 }

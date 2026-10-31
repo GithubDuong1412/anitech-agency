@@ -10,10 +10,12 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "sync:agents": "node scripts/sync-agents.mjs"
+    "sync:agents": "node scripts/sync-agents.mjs",
+    "db:import": "node scripts/import-sqlite-to-mysql.mjs"
   },
   "dependencies": {
     "motion": "^14.8.0",
+    "mysql2": "^3.24.6",
     "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

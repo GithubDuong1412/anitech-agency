@@ -181,7 +181,8 @@
   "taskStatus": {
     "active": "进行中",
     "review": "等待 CEO 审核",
-    "complete": "已完成"
+    "complete": "已完成",
+    "failed": "失败"
   },
   "tasks": {
     "catalogApi": "为 Catalog API 设计分页",
@@ -208,7 +209,9 @@
     "approve": "批准",
     "requestChanges": "要求修改",
     "approvalPrompt": "Goku 已完成质量检查。是否批准发布？",
-    "ownerLine": "负责人"
+    "ownerLine": "负责人",
+    "executionAi": "AI · {model}",
+    "executionDemo": "演示模式"
   },
   "executive": {
     "kicker": "管理办公室",
@@ -249,6 +252,7 @@
   },
   "footer": {
     "modelLive": "模型 {model}",
-    "modelDemo": "演示模式（未配置模型）"
+    "modelDemo": "演示模式（未配置模型）",
+    "database": "DB {engine}"
   }
 }

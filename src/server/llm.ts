@@ -15,6 +15,8 @@ export interface LlmConfig {
   model: string;
   jsonMode: boolean;
   maxTokens: number;
+  timeoutMs: number;
+  maxTurns: number;
 }
 
 type Env = Record<string, string | undefined>;
@@ -24,12 +26,16 @@ export function llmConfig(env: Env = process.env): LlmConfig | null {
   const apiKey = env.LLM_API_KEY?.trim();
   if (!apiKey) return null;
   const maxTokens = Number(env.LLM_MAX_TOKENS);
+  const timeoutMs = Number(env.LLM_TIMEOUT_MS);
+  const maxTurns = Number(env.LLM_MAX_TURNS);
   return {
     apiKey,
     baseUrl: (env.LLM_BASE_URL?.trim() || "https://api.openai.com/v1").replace(/\/+$/, ""),
     model: env.LLM_MODEL?.trim() || "gpt-4o-mini",
     jsonMode: env.LLM_JSON_MODE?.trim().toLowerCase() !== "false",
     maxTokens: Number.isFinite(maxTokens) && maxTokens > 0 ? Math.min(maxTokens, 4000) : 700,
+    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs >= 1000 ? Math.min(timeoutMs, 120_000) : 45_000,
+    maxTurns: Number.isFinite(maxTurns) && maxTurns >= 3 ? Math.min(Math.floor(maxTurns), 16) : 8,
   };
 }
 
@@ -39,8 +45,6 @@ export class LlmError extends Error {
     this.name = "LlmError";
   }
 }
-
-const TIMEOUT_MS = 45_000;
 
 export function createLlmClient(config: LlmConfig, fetchImpl: typeof fetch = fetch): LlmClient {
   async function call(messages: ChatMessage[], json: boolean): Promise<string> {
@@ -54,7 +58,7 @@ export function createLlmClient(config: LlmConfig, fetchImpl: typeof fetch = fet
         max_tokens: config.maxTokens,
         ...(json ? { response_format: { type: "json_object" } } : {}),
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(config.timeoutMs),
     });
     if (!response.ok) {
       // Never echo the provider body: it can contain request details. Status is enough to debug.

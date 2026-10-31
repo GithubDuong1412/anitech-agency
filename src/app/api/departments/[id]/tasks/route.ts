@@ -20,11 +20,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!tryLock(dept.id)) return Response.json({ error: "busy" }, { status: 409 });
 
   const config = llmConfig();
-  const store = openStore(dept.id);
+  const store = await openStore(dept.id);
   return ndjson(async (emit) => {
     try {
       await runNewTask(
-        { store, dept, llm: config ? createLlmClient(config) : null, locale: input.locale, emit },
+        { store, dept, llm: config ? createLlmClient(config) : null, provider: config ? "openai-compatible" : undefined, model: config?.model, locale: input.locale, emit, maxTurns: config?.maxTurns },
         { title: input.title, ownerId: input.ownerId, areas: input.areas },
       );
     } finally {

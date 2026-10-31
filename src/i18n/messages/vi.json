@@ -181,7 +181,8 @@
   "taskStatus": {
     "active": "ĐANG LÀM",
     "review": "CHỜ CEO DUYỆT",
-    "complete": "HOÀN TẤT"
+    "complete": "HOÀN TẤT",
+    "failed": "THẤT BẠI"
   },
   "tasks": {
     "catalogApi": "Thiết kế pagination cho Catalog API",
@@ -208,7 +209,9 @@
     "approve": "Phê duyệt",
     "requestChanges": "Yêu cầu sửa",
     "approvalPrompt": "Goku đã hoàn tất quality gate. Bạn có muốn duyệt phát hành không?",
-    "ownerLine": "Người phụ trách"
+    "ownerLine": "Người phụ trách",
+    "executionAi": "AI · {model}",
+    "executionDemo": "Chế độ demo"
   },
   "executive": {
     "kicker": "BÀN ĐIỀU HÀNH",
@@ -249,6 +252,7 @@
   },
   "footer": {
     "modelLive": "MODEL {model}",
-    "modelDemo": "CHẾ ĐỘ DEMO (CHƯA CÓ MODEL)"
+    "modelDemo": "CHẾ ĐỘ DEMO (CHƯA CÓ MODEL)",
+    "database": "DB {engine}"
   }
 }

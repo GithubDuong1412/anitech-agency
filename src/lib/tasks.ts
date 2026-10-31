@@ -1,6 +1,6 @@
 import type { AgentId } from "./roster";
 
-export type TaskStatus = "active" | "review" | "complete";
+export type TaskStatus = "active" | "review" | "complete" | "failed";
 export type TaskTitleKey = "catalogApi" | "checkoutTests" | "adminAudit" | "facebookCaption" | "carouselBrief" | "custom";
 
 export interface Task {
@@ -9,6 +9,9 @@ export interface Task {
   title?: string;
   ownerId: AgentId;
   status: TaskStatus;
+  runMode?: "ai" | "demo";
+  provider?: string;
+  model?: string;
   progress: number;
   createdAt: number;
 }

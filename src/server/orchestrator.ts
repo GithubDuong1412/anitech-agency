@@ -5,7 +5,7 @@ import { relevantAgents } from "@/lib/routing";
 import { type Task, approveTask, createTask, requestTaskChanges } from "@/lib/tasks";
 import type { RunEvent } from "@/lib/state";
 import { isLocale, translate } from "@/i18n";
-import type { Store } from "./db";
+import type { DeptStore } from "./db";
 import type { LlmClient } from "./llm";
 import { buildSystemPrompt } from "./persona";
 
@@ -17,9 +17,11 @@ import { buildSystemPrompt } from "./persona";
  */
 
 export interface RunDeps {
-  store: Store;
+  store: DeptStore;
   dept: Department;
   llm: LlmClient | null;
+  provider?: string;
+  model?: string;
   locale: string;
   emit: (event: RunEvent) => void;
   /** Pause between scripted demo turns so the map can animate. Defaults to 1200ms in demo mode, 0 with a model. */
@@ -80,9 +82,10 @@ export function parseTurn(
   selfId: AgentId,
 ): Turn {
   const data = extractJson(raw);
+  if (!data) throw new Error("agent turn returned invalid JSON");
   const kindValue = typeof data?.kind === "string" ? (data.kind as HubMessageKind) : undefined;
   const kind = kindValue && allowed.has(kindValue) ? kindValue : hint;
-  const text = (typeof data?.text === "string" ? data.text : data ? "" : raw).trim().slice(0, MAX_TEXT);
+  const text = (typeof data.text === "string" ? data.text : "").trim().slice(0, MAX_TEXT);
   if (!text) throw new Error("agent turn had no text");
   const ask: AgentId[] = [];
   if (Array.isArray(data?.ask)) {
@@ -121,10 +124,10 @@ class Run {
     return message.text ?? (message.textKey ? translate(isLocale(this.deps.locale) ? this.deps.locale : "vi", message.textKey) : "");
   }
 
-  private transcript(): string {
+  private async transcript(): Promise<string> {
     const { dept, store } = this.deps;
     const name = (id: AgentId) => dept.agents.find((agent) => agent.id === id)?.name ?? id;
-    const lines = store.hub().messages.filter((message) => message.threadId === this.threadId)
+    const lines = (await store.hub()).messages.filter((message) => message.threadId === this.threadId)
       .map((message) => `${name(message.from)} [${message.kind}]: ${plain(this.text(message))}`);
     return lines.length ? lines.join("\n") : "(chưa có)";
   }
@@ -149,7 +152,7 @@ class Run {
       options.note ? `<note>${plain(options.note).slice(0, 500)}</note>` : "",
       "",
       "Trao đổi trong thread cho tới giờ:",
-      this.transcript(),
+      await this.transcript(),
       "",
       `Việc của bạn lúc này: ${instruction}`,
     ].filter((line, index) => line || index === 2 || index === 4).join("\n");
@@ -163,10 +166,10 @@ class Run {
   async say(agentId: AgentId, turn: Turn): Promise<boolean> {
     const { store, emit } = this.deps;
     const message: HubMessage = { id: "msg-" + this.newId(), threadId: this.threadId, from: agentId, kind: turn.kind, textKey: turn.textKey, text: turn.text, at: this.now() };
-    const previous = store.hub();
+    const previous = await store.hub();
     const next = postMessage(previous, message);
     if (next === previous) return false;
-    store.commitHub(previous, next);
+    await store.commitHub(previous, next);
     this.turns += 1;
     this.spoken.set(agentId, (this.spoken.get(agentId) ?? 0) + 1);
     const thread = next.threads.find((item) => item.id === this.threadId);
@@ -174,47 +177,52 @@ class Run {
     return true;
   }
 
-  join(agentId: AgentId) {
+  async join(agentId: AgentId) {
     const { store, emit } = this.deps;
-    const previous = store.hub();
+    const previous = await store.hub();
     const next = joinThread(previous, this.threadId, agentId);
     if (next === previous) return;
-    store.commitHub(previous, next);
+    await store.commitHub(previous, next);
     const thread = next.threads.find((item) => item.id === this.threadId);
     if (thread) emit({ type: "thread", thread });
   }
 
-  close() {
+  async close() {
     const { store, emit } = this.deps;
-    const previous = store.hub();
+    const previous = await store.hub();
     const next = closeThread(previous, this.threadId);
-    store.commitHub(previous, next);
+    await store.commitHub(previous, next);
     const thread = next.threads.find((item) => item.id === this.threadId);
     if (thread) emit({ type: "thread", thread });
   }
 
-  patchTask(patch: Partial<Pick<Task, "status" | "progress">>): Task | undefined {
+  async patchTask(patch: Partial<Pick<Task, "status" | "progress">>): Promise<Task | undefined> {
     const { store, emit } = this.deps;
-    const current = store.getTask(this.taskId);
+    const current = await store.getTask(this.taskId);
     if (!current) return undefined;
     const task = { ...current, ...patch };
-    store.saveTask(task);
+    await store.saveTask(task);
     emit({ type: "task", task });
     return task;
   }
 
-  activity(type: "assigned" | "submitted" | "approved" | "returned", agentId: AgentId) {
-    this.deps.emit({ type: "activity", activity: this.deps.store.addActivity({ type, agentId }, this.now()) });
+  async activity(type: "assigned" | "submitted" | "approved" | "returned", agentId: AgentId) {
+    this.deps.emit({ type: "activity", activity: await this.deps.store.addActivity({ type, agentId }, this.now()) });
   }
 
   async review(ownerId: AgentId) {
     const { dept } = this.deps;
     const reviewer = dept.reviewer.id;
-    this.join(reviewer);
-    const turn = await this.turn(reviewer, "Duyệt kết quả của owner: đạt hay cần sửa, kèm lý do ngắn.", "review", { allowed: REVIEW_KINDS });
+    await this.join(reviewer);
+    const turn = await this.turn(
+      reviewer,
+      "Đối chiếu kết quả cuối của owner với yêu cầu ban đầu. Kiểm tra tính đầy đủ, các khẳng định có căn cứ trong thread, giả định và điểm chưa chắc chắn. Nêu rõ tiêu chí chưa đạt; không tuyên bố đã xác minh nếu không có bằng chứng. Trình bày kết luận và phần cần người dùng kiểm tra.",
+      "review",
+      { allowed: REVIEW_KINDS },
+    );
     await this.say(reviewer, turn);
-    this.patchTask({ status: "review", progress: 100 });
-    this.activity("submitted", ownerId);
+    await this.patchTask({ status: "review", progress: 100 });
+    await this.activity("submitted", ownerId);
   }
 
   /** Any failure ends in a visible message and a task waiting for the user, never a silent hang. */
@@ -228,7 +236,8 @@ class Run {
       } catch {
         // The thread may already be closed; the task state below is what matters.
       }
-      this.patchTask({ status: "review", progress: 100 });
+      // A failed model run must never appear in the approval queue as a completed review.
+      await this.patchTask({ status: "failed", progress: 0 });
       this.deps.emit({ type: "error", code: "agent" });
     }
   }
@@ -237,7 +246,7 @@ class Run {
   async decide(approve: boolean, note?: string) {
     const { dept } = this.deps;
     const ceo = dept.ceo.id;
-    this.join(ceo);
+    await this.join(ceo);
     const demoKey = approve ? "hub.msg.approved" : "hub.msg.returned";
     const instruction = approve
       ? "Người dùng đã phê duyệt kết quả. Ghi quyết định ngắn gọn cho Trung tâm dữ liệu."
@@ -262,24 +271,24 @@ export async function runNewTask(deps: RunDeps, input: NewTaskInput): Promise<Ta
   const { store, dept, emit } = deps;
   const now = deps.now ?? Date.now;
   const id = (deps.newId ?? (() => randomUUID().slice(0, 8)))();
-  const task = createTask({ id: "task-" + id, title: input.title, ownerId: input.ownerId, createdAt: now() });
+  const task: Task = { ...createTask({ id: "task-" + id, title: input.title, ownerId: input.ownerId, createdAt: now() }), runMode: deps.llm ? "ai" : "demo", provider: deps.llm ? deps.provider ?? "openai-compatible" : undefined, model: deps.llm ? deps.model : undefined };
   const threadId = "thread-" + task.id;
   const participants = relevantAgents(task.title ?? "", input.ownerId, input.areas, dept);
 
-  store.saveTask(task);
-  const previous = store.hub();
+  await store.saveTask(task);
+  const previous = await store.hub();
   const next = openThread(previous, { id: threadId, taskId: task.id, topicTitle: task.title, participants });
-  store.commitHub(previous, next);
+  await store.commitHub(previous, next);
   emit({ type: "task", task });
   const thread = next.threads.find((item) => item.id === threadId);
   if (thread) emit({ type: "thread", thread });
 
   const run = new Run(deps, task.id, threadId, task.title ?? "");
-  run.activity("assigned", input.ownerId);
+  await run.activity("assigned", input.ownerId);
 
   await run.guard(input.ownerId, async () => {
     const owner = input.ownerId;
-    run.patchTask({ progress: 20 });
+    await run.patchTask({ progress: 20 });
     const plan = await run.turn(owner, "Đọc nhiệm vụ trong thẻ <task>, đưa kế hoạch ngắn và nêu rõ cần hỏi hoặc bàn giao ai (trường ask).", "plan");
     await run.say(owner, plan);
 
@@ -295,7 +304,7 @@ export async function runNewTask(deps: RunDeps, input: NewTaskInput): Promise<Ta
       if (run.turns >= budget) break;
       const agentId = queue[index];
       if ((run.spoken.get(agentId) ?? 0) >= MAX_TURNS_PER_AGENT) continue;
-      run.join(agentId);
+      await run.join(agentId);
       const turn = await run.turn(
         agentId,
         "Trả lời hoặc đặt câu hỏi cho owner bằng kiến thức của vai trò bạn. Nếu cần bàn giao hoặc hỏi thêm ai thì ghi vào ask.",
@@ -305,7 +314,7 @@ export async function runNewTask(deps: RunDeps, input: NewTaskInput): Promise<Ta
       for (const askId of turn.ask) {
         if (!skip.has(askId) && !queue.includes(askId)) queue.push(askId);
       }
-      run.patchTask({ progress: Math.min(85, 20 + 15 * (index + 1)) });
+      await run.patchTask({ progress: Math.min(85, 20 + 15 * (index + 1)) });
     }
 
     const summary = await run.turn(owner, "Tổng hợp ý kiến của đồng đội thành câu trả lời hoặc kết quả cuối cho người dùng.", "answer");
@@ -313,7 +322,7 @@ export async function runNewTask(deps: RunDeps, input: NewTaskInput): Promise<Ta
     await run.review(owner);
   });
 
-  return store.getTask(task.id) ?? task;
+  return (await store.getTask(task.id)) ?? task;
 }
 
 export type ResolveAction = "approve" | "changes";
@@ -321,29 +330,29 @@ export type ResolveAction = "approve" | "changes";
 /** Caller must have checked that the task exists and is in review. */
 export async function runResolve(deps: RunDeps, taskId: string, action: ResolveAction, note?: string): Promise<Task | undefined> {
   const { store } = deps;
-  const current = store.getTask(taskId);
+  const current = await store.getTask(taskId);
   if (!current) return undefined;
   const run = new Run(deps, current.id, "thread-" + current.id, current.title ?? "");
   const owner = current.ownerId;
 
   if (action === "approve") {
-    run.patchTask({ status: approveTask(current).status, progress: 100 });
-    run.activity("approved", owner);
+    await run.patchTask({ status: approveTask(current).status, progress: 100 });
+    await run.activity("approved", owner);
     await run.decide(true);
-    run.close();
-    return store.getTask(taskId);
+    await run.close();
+    return await store.getTask(taskId);
   }
 
   const reopened = requestTaskChanges(current);
-  run.patchTask({ status: reopened.status, progress: reopened.progress });
-  run.activity("returned", owner);
+  await run.patchTask({ status: reopened.status, progress: reopened.progress });
+  await run.activity("returned", owner);
   await run.guard(owner, async () => {
     await run.decide(false, note);
     const revision = await run.turn(owner, "Sửa lại kết quả theo yêu cầu của người dùng và quyết định ở trên, rồi trả lời bản cập nhật.", "answer", { note });
     await run.say(owner, revision);
     await run.review(owner);
   });
-  return store.getTask(taskId);
+  return await store.getTask(taskId);
 }
 
 /** Tasks only move from review. Used by the routes before they start streaming. */

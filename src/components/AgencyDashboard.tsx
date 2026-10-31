@@ -46,6 +46,7 @@ function seedRuntime(department: Department): DeptRuntime {
 
 function agentStatus(agentId: AgentId, tasks: Task[]): "ready" | TaskStatus {
   const owned = tasks.filter((task) => task.ownerId === agentId);
+  if (owned.some((task) => task.status === "failed")) return "failed";
   if (owned.some((task) => task.status === "active")) return "active";
   if (owned.some((task) => task.status === "review")) return "review";
   if (owned.some((task) => task.status === "complete")) return "complete";
@@ -83,7 +84,7 @@ export default function AgencyDashboard() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
   const [mapExpanded, setMapExpanded] = useState(false);
-  const [model, setModel] = useState<{ llm: boolean; model: string | null } | null>(null);
+  const [model, setModel] = useState<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite" } | null>(null);
   const [running, setRunning] = useState<Record<DepartmentId, boolean>>({ it: false, social: false });
   const [zoomByDept, setZoomByDept] = useState<Record<DepartmentId, number>>({ it: 1, social: 1 });
   const itZoomRef = useRef<MapZoomApi | null>(null);
@@ -270,7 +271,7 @@ export default function AgencyDashboard() {
     const frame = window.requestAnimationFrame(() => {
       for (const id of DEPARTMENT_IDS) void loadState(id);
       fetch("/api/health", { cache: "no-store" })
-        .then((response) => response.json() as Promise<{ llm: boolean; model: string | null }>)
+        .then((response) => response.json() as Promise<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite" }>)
         .then((data) => setModel(data))
         .catch(() => setModel(null));
     });
@@ -379,7 +380,7 @@ export default function AgencyDashboard() {
   const profileAgent = profileAgentId ? getAgent(profileAgentId) ?? null : null;
   const profileDepartment = profileAgent ? departmentOf(profileAgent.id) : department;
   const profileStatus = profileAgent ? statusesFor(profileDepartment, runtime[profileDepartment.id].tasks)[profileAgent.id] : "ready";
-  const profileStatusText = profileStatus === "ready" || profileStatus === "complete" ? t("roster.statusReady") : profileStatus === "active" ? t("roster.statusWorking") : t("roster.statusReview");
+  const profileStatusText = profileStatus === "ready" || profileStatus === "complete" ? t("roster.statusReady") : profileStatus === "failed" ? t("taskStatus.failed") : profileStatus === "active" ? t("roster.statusWorking") : t("roster.statusReview");
   const profileTasks = profileAgent ? runtime[profileDepartment.id].tasks.filter((task) => task.ownerId === profileAgent.id) : [];
 
   const agentLabel = (id?: AgentId) => (id ? getAgent(id)?.name : undefined);
@@ -510,7 +511,7 @@ export default function AgencyDashboard() {
               <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10.5rem),1fr))] gap-2 @2xl/main:grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))]">
                 {agents.map((agent, index) => {
                   const status = statuses[agent.id];
-                  const statusText = status === "ready" || status === "complete" ? t("roster.statusReady") : status === "active" ? t("roster.statusWorking") : t("roster.statusReview");
+                  const statusText = status === "ready" || status === "complete" ? t("roster.statusReady") : status === "failed" ? t("taskStatus.failed") : status === "active" ? t("roster.statusWorking") : t("roster.statusReview");
                   return <m.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + index * 0.05, duration: 0.35, ease: EASE }} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className={"agent-card @container/card" + (selectedAgentId === agent.id ? " selected" : "")} type="button" key={agent.id} onClick={() => patch(workspace, (current) => ({ ...current, selectedAgentId: agent.id }))} aria-pressed={selectedAgentId === agent.id}>
                     <span className="agent-avatar" style={avatarStyle(agent)}><span>{agent.name.slice(0, 1)}</span><i className={"presence-dot " + status} /></span>
                     <span className="agent-info"><b>{agent.name}</b><small>{t("roles." + agent.role)}</small><span className="agent-status @max-[7.5rem]/card:hidden"><i className={"status-bullet " + status} />{statusText}</span></span>
@@ -542,7 +543,7 @@ export default function AgencyDashboard() {
                   const taskLabel = task.titleKey === "custom" ? task.title ?? "" : t("tasks." + task.titleKey);
                   return <m.article layout="position" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.28, ease: EASE }} className={"task-item " + task.status} key={task.id}>
                     <span className="task-marker" />
-                    <div className="task-copy"><strong>{taskLabel}</strong><small><span className="mini-agent" style={owner ? avatarStyle(owner) : undefined}>{owner?.name.slice(0, 1)}</span>{owner?.name} · {owner ? t("roles." + owner.role) : ""}</small></div>
+                    <div className="task-copy"><strong>{taskLabel}</strong>{task.runMode === "ai" && <small>{t("tasks.executionAi", { model: task.model ?? "" })}</small>}{task.runMode === "demo" && <small>{t("tasks.executionDemo")}</small>}<small><span className="mini-agent" style={owner ? avatarStyle(owner) : undefined}>{owner?.name.slice(0, 1)}</span>{owner?.name} · {owner ? t("roles." + owner.role) : ""}</small></div>
                     <span className="task-state @max-[17rem]/queue:max-w-16 @max-[17rem]/queue:text-[0.65rem]">{t("taskStatus." + task.status)}</span>
                     <div className="task-progress"><m.span initial={false} animate={{ width: task.progress + "%" }} transition={{ duration: 0.5, ease: EASE }} /></div>
                     {task.status === "review" && <div className="task-actions"><button type="button" disabled={running[workspace]} onClick={() => resolveTask(task, true)}>{t("tasks.approve")}</button><button type="button" disabled={running[workspace]} onClick={() => resolveTask(task, false)}>{t("tasks.requestChanges")}</button></div>}
@@ -553,7 +554,7 @@ export default function AgencyDashboard() {
             </m.section>
 
             <m.section {...rise(2)} className="profile-card" aria-labelledby="profile-title">
-              <div className="section-heading compact-heading"><div><span className="section-kicker">{t("roster.team")}</span><h2 id="profile-title">{selectedAgent.name}</h2></div><span className={"profile-status " + statuses[selectedAgent.id]}>{statuses[selectedAgent.id] === "ready" || statuses[selectedAgent.id] === "complete" ? t("roster.statusReady") : statuses[selectedAgent.id] === "active" ? t("roster.statusWorking") : t("roster.statusReview")}</span></div>
+              <div className="section-heading compact-heading"><div><span className="section-kicker">{t("roster.team")}</span><h2 id="profile-title">{selectedAgent.name}</h2></div><span className={"profile-status " + statuses[selectedAgent.id]}>{statuses[selectedAgent.id] === "ready" || statuses[selectedAgent.id] === "complete" ? t("roster.statusReady") : statuses[selectedAgent.id] === "failed" ? t("taskStatus.failed") : statuses[selectedAgent.id] === "active" ? t("roster.statusWorking") : t("roster.statusReview")}</span></div>
               <p className="profile-role">{t("roles." + selectedAgent.role)}</p>
               <div className="profile-divider" />
               <div className="profile-detail"><span>{t("roster.focus")}</span><b>{t("focus." + selectedAgent.role)}</b></div>
@@ -569,7 +570,7 @@ export default function AgencyDashboard() {
             {!model?.llm && <div className="privacy-note @xl/rail:col-span-full"><span aria-hidden="true">◈</span><p>{t("messages.prototype")}</p></div>}
           </aside>
         </div>
-        <footer className="app-footer"><span>ANITECH AGENCY / AGENT OPERATIONS</span><span>{model === null ? "" : model.llm ? t("footer.modelLive", { model: model.model ?? "" }) : t("footer.modelDemo")} · BUILD 0.1.0 · PRIVATE PROTOTYPE</span></footer>
+        <footer className="app-footer"><span>ANITECH AGENCY / AGENT OPERATIONS</span><span>{model === null ? "" : model.llm ? t("footer.modelLive", { model: model.model ?? "" }) : t("footer.modelDemo")}{model?.db ? ` · ${t("footer.database", { engine: model.db === "mysql" ? "MySQL" : "SQLite" })}` : ""} · BUILD 0.1.0 · PRIVATE PROTOTYPE</span></footer>
       </main>
 
       <dialog className="modal task-modal" ref={dialogRef} onClose={() => { setTaskDialogOpen(false); patch(workspace, (current) => ({ ...current, areasTouched: false, ownerTouched: false })); }} aria-labelledby="task-dialog-title">

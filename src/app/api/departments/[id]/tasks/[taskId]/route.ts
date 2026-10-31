@@ -18,11 +18,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const input = parseResolve(await readJson(request));
   if (!input) return Response.json({ error: "invalid" }, { status: 400 });
 
-  const store = openStore(dept.id);
-  if (!store.getTask(taskId)) return Response.json({ error: "not_found" }, { status: 404 });
+  const store = await openStore(dept.id);
+  if (!(await store.getTask(taskId))) return Response.json({ error: "not_found" }, { status: 404 });
   if (!tryLock(dept.id)) return Response.json({ error: "busy" }, { status: 409 });
   // Checked after the lock so two clicks cannot both resolve the same task.
-  if (!canResolve(store.getTask(taskId))) {
+  if (!canResolve(await store.getTask(taskId))) {
     unlock(dept.id);
     return Response.json({ error: "not_in_review" }, { status: 409 });
   }
@@ -30,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const config = llmConfig();
   return ndjson(async (emit) => {
     try {
-      await runResolve({ store, dept, llm: config ? createLlmClient(config) : null, locale: input.locale, emit }, taskId, input.action, input.note);
+      await runResolve({ store, dept, llm: config ? createLlmClient(config) : null, provider: config ? "openai-compatible" : undefined, model: config?.model, locale: input.locale, emit, maxTurns: config?.maxTurns }, taskId, input.action, input.note);
     } finally {
       unlock(dept.id);
     }
