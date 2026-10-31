@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { type Agent, avatarStyle } from "@/lib/roster";
+import { type Agent, type MapScene } from "@/lib/roster";
 
 export type MapZoomApi = {
   zoomIn: () => void;
@@ -20,31 +20,28 @@ type Props = {
   syncPulse?: number;
   onHubOpen?: () => void;
   hubLabel?: string;
-  /** Translate an i18n key (used for office names). */
-  t: (key: string) => string;
+  /** Background, center piece, and link geometry for this floor. */
+  scene: MapScene;
   /** Buttons for these actions live outside the map. */
   zoomApiRef?: RefObject<MapZoomApi | null>;
   onZoomChange?: (zoom: number) => void;
 };
 
-// Centre hub (the lotus pavilion): where it stands (feet), its height, and the point the dashed lines connect to.
-const CENTER = { x: 50, y: 52, height: 16, hub: { x: 50, y: 46 } };
-const MAP_ASPECT = 819 / 461;
-
 // Curved path (quadratic) from the hub to a point, bowed upward.
-function curvePath(to: { x: number; y: number }): string {
-  const { hub } = CENTER;
-  const dx = (to.x - hub.x) * MAP_ASPECT;
+function curvePath(to: { x: number; y: number }, scene: MapScene): string {
+  const { hub } = scene.centerMark;
+  const aspect = scene.width / scene.height;
+  const dx = (to.x - hub.x) * aspect;
   const dy = to.y - hub.y;
   const len = Math.hypot(dx, dy) || 1;
   let px = -dy / len;
   let py = dx / len;
   if (py > 0) { px = -px; py = -py; }
   const bow = 0.28 * len;
-  const cx = hub.x + (to.x - hub.x) / 2 + (px * bow) / MAP_ASPECT;
+  const cx = hub.x + (to.x - hub.x) / 2 + (px * bow) / aspect;
   const cy = hub.y + dy / 2 + py * bow;
-  const X = 819 / 100;
-  const Y = 461 / 100;
+  const X = scene.width / 100;
+  const Y = scene.height / 100;
   return `M ${(hub.x * X).toFixed(1)} ${(hub.y * Y).toFixed(1)} Q ${(cx * X).toFixed(1)} ${(cy * Y).toFixed(1)} ${(to.x * X).toFixed(1)} ${(to.y * Y).toFixed(1)}`;
 }
 
@@ -54,7 +51,7 @@ const DOT_RADIUS = 4;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3.5;
 
-export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOpen, talkingIds = [], syncPulse = 0, onHubOpen, hubLabel = "Data hub", t, zoomApiRef, onZoomChange }: Props) {
+export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOpen, talkingIds = [], syncPulse = 0, onHubOpen, hubLabel = "Data hub", scene, zoomApiRef, onZoomChange }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -135,7 +132,7 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
       ref={frameRef}
       className="temple-map"
       role="img"
-      aria-label="Temple Studio Map"
+      aria-label={scene.ariaLabel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -143,13 +140,13 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
     >
       <div className="temple-stage" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="temple-bg" src="/maps/temple.png" alt="" draggable={false} />
-        <svg className="temple-links" viewBox="0 0 819 461" aria-hidden="true">
+        <img className="temple-bg" src={scene.background} alt="" draggable={false} />
+        <svg className="temple-links" viewBox={`0 0 ${scene.width} ${scene.height}`} aria-hidden="true">
           <g key={syncPulse} className={syncPulse > 0 ? "links-pulse" : undefined}>
             {agents.map((agent) => {
               const feet = agent.map;
               const target = { x: feet.x, y: feet.y - feet.height * 0.9 };
-              const d = curvePath(target);
+              const d = curvePath(target, scene);
               const talking = talkingIds.includes(agent.id);
               return (
                 <g key={agent.id}>
@@ -167,12 +164,12 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
         <button
           type="button"
           className={"temple-center" + (talkingIds.length > 0 ? " is-busy" : "")}
-          style={{ left: CENTER.x + "%", top: CENTER.y + "%", height: CENTER.height + "cqh" }}
+          style={{ left: scene.centerMark.x + "%", top: scene.centerMark.y + "%", height: scene.centerMark.height + "cqh" }}
           aria-label={hubLabel}
           onClick={() => { if (!drag.current?.moved) onHubOpen?.(); }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/maps/center.png" alt="" draggable={false} />
+          <img src={scene.center} alt="" draggable={false} />
         </button>
         {agents.map((agent) => {
           const feet = agent.map;
@@ -202,13 +199,11 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
                 onClick={() => { if (!drag.current?.moved) onAgentOpen?.(agent.id); }}
                 aria-label={`${agent.title} — ${agent.name}`}
               >
-                <span className="temple-photo" style={avatarStyle(agent)} />
                 <span className={"presence-dot temple-dot " + status} />
                 <span className="temple-text">
-                  <small>{t("office.rooms." + agent.role)}</small>
-                  <b>{agent.title}</b>
+                  <b className="temple-name">{agent.name}</b>
+                  <small>{agent.title}</small>
                 </span>
-                <span className="temple-name">{agent.name}</span>
               </button>
             </div>
             </div>

@@ -10,14 +10,15 @@
     "workspace": "WORKSPACE",
     "controlRoom": "Control room",
     "agentRoster": "Agent roster",
-    "workQueue": "Work queue"
+    "workQueue": "Work queue",
+    "pendingApproval": "{count} awaiting approval"
   },
   "dashboard": {
     "companyLabel": "YOUR PRIVATE AI COMPANY",
     "livePreview": "LIVE PREVIEW",
     "createTask": "Create a task",
     "teamReady": "Team is ready",
-    "teamReadyDetail": "CEO oversight · 6 specialists on standby",
+    "teamReadyDetail": "CEO oversight · {count} specialists on standby",
     "teamWorking": "Team is collaborating",
     "teamWorkingDetail": "CEO coordinating · work is in progress",
     "awaitingApproval": "Waiting for your approval",
@@ -27,7 +28,7 @@
   },
   "office": {
     "kicker": "WORKSPACE MAP",
-    "title": "One studio, seven roles",
+    "title": "One studio, {count} roles",
     "hint": "Select a colleague to inspect",
     "sceneDescription": "Isometric 3D office with seven agent work areas and a central meeting space.",
     "rooms": {
@@ -37,7 +38,15 @@
       "senior": "ARCHITECT'S DEN",
       "testing": "TESTING DECK",
       "reality": "RELEASE GATE",
-      "ceo": "CEO OFFICE"
+      "ceo": "CEO OFFICE",
+      "socialCeo": "LEAD HALL",
+      "director": "STRATEGY PAVILION",
+      "copy": "COPY STUDIO",
+      "image": "IMAGE FORGE",
+      "trend": "TREND WATCH",
+      "community": "COMMUNITY HALL",
+      "ads": "ADS WORKSHOP",
+      "carousel": "CAROUSEL WORKSHOP"
     },
     "legendReady": "Ready",
     "legendWorking": "Working",
@@ -47,7 +56,11 @@
     "zoomIn": "Zoom in",
     "zoomReset": "Reset",
     "zoomAll": "Zoom all",
-    "zoomExit": "Exit full map"
+    "zoomExit": "Exit full map",
+    "workspacesLabel": "Workspaces",
+    "workspaceIt": "IT Research",
+    "workspaceSocial": "Social Marketing",
+    "socialEmpty": "This floor has no characters yet."
   },
   "roster": {
     "kicker": "TEAM ROSTER",
@@ -66,7 +79,15 @@
     "security": "Application Security Engineer",
     "testing": "Test Automation Engineer",
     "reality": "Reality Checker",
-    "ceo": "Chief Executive · Approver"
+    "ceo": "Chief Executive · Approver",
+    "socialCeo": "Social lead · Coordinator",
+    "director": "Facebook content director",
+    "copy": "Facebook caption writer",
+    "image": "AI image prompt engineer",
+    "trend": "Trend and hot-search hunter",
+    "community": "Comment and Messenger care",
+    "ads": "Paid creative strategist",
+    "carousel": "Facebook carousel structure"
   },
   "focus": {
     "backend": "API · schema · database",
@@ -75,7 +96,15 @@
     "security": "Threat modeling · auth · AppSec",
     "testing": "Playwright · regression · CI",
     "reality": "Acceptance · evidence · release gate",
-    "ceo": "Direction · delegation · approval"
+    "ceo": "Direction · delegation · approval",
+    "socialCeo": "Coordination · assignment · review",
+    "director": "Pillars · schedule · post mix",
+    "copy": "Hook · caption · CTA · hashtag",
+    "image": "Prompt · Midjourney · 4:5",
+    "trend": "Hot search · Facebook · Google",
+    "community": "Comments · Messenger · replies",
+    "ads": "Pain point · ad creative · Facebook Ads",
+    "carousel": "3–5 slides · infographic · CTA"
   },
   "profiles": {
     "backend": "Designs APIs, data models, and backend workflows with consistency, scale, and backward compatibility in mind.",
@@ -84,7 +113,15 @@
     "security": "Reviews threat models, authentication, authorization, and sensitive data; reports evidence-backed risks.",
     "testing": "Builds reliable automated tests, isolated data, and evidence that makes failures reproducible.",
     "reality": "Evidence-based quality gate: checks acceptance criteria, tests, and remaining risk before release.",
-    "ceo": "Sets priorities, delegates, and approves. Project changes and deployments require your confirmation."
+    "ceo": "Sets priorities, delegates, and approves. Project changes and deployments require your confirmation.",
+    "socialCeo": "Coordinates the social floor, assigns writing, images, and review. A post is not done until you confirm it.",
+    "director": "Sets content pillars, the posting schedule, and the mix of sales versus value posts. Reviews quality before it reaches you.",
+    "copy": "Writes Facebook captions: a short hook, scannable body, emoji as section marks, a clear CTA, and a tight hashtag set.",
+    "image": "Writes English prompts that match the post, at 1:1, 4:5, or 16:9 for Facebook.",
+    "trend": "Catches rising topics and searches on Facebook or Google and turns them into a timely post idea.",
+    "community": "Drafts comment and Messenger replies in the brand voice, without inventing policy.",
+    "ads": "Proposes ad angles around a pain point, with a headline and CTA to test on Facebook Ads.",
+    "carousel": "Splits a post into 3–5 Facebook slides: problem, solution, and a CTA on the last slide."
   },
   "profile": {
     "kicker": "AGENT PROFILE",
@@ -128,7 +165,8 @@
       "handoff": "Picked up the related part and will report back to the hub.",
       "review": "Quality gate finished; ready for approval.",
       "approved": "Approved. The thread is closed.",
-      "returned": "Sent back for changes. The owner continues."
+      "returned": "Sent back for changes. The owner continues.",
+      "llmError": "I could not get an answer from the model. Please resend, or check the model settings."
     }
   },
   "queue": {
@@ -149,15 +187,20 @@
     "catalogApi": "Design pagination for Catalog API",
     "checkoutTests": "Checkout regression suite",
     "adminAudit": "Review admin access controls",
+    "facebookCaption": "Write a Facebook caption for the new product",
+    "carouselBrief": "Four-slide Facebook carousel",
     "newAssignment": "NEW ASSIGNMENT",
     "modalTitle": "Give the team a direction",
     "label": "What needs to get done?",
     "placeholder": "For example: Review sign-in and propose regression tests…",
-    "hint": "Pick the parts this task touches. Gojo owns it by default; matching people join him.",
+    "placeholderSocial": "For example: Write a Facebook post with a hook, then a 4:5 image prompt…",
+    "hint": "The suggested owner is whoever is selected above. {fallback} takes the task when nothing is selected.",
     "areaLabel": "Which part does this task relate to?",
     "ownerLabel": "Suggested owner",
-    "defaultOwner": "Default · Senior",
+    "leadLabel": "Lead",
+    "defaultOwner": "Default · {name}",
     "together": "Working with",
+    "togetherEmpty": "None",
     "togetherNone": "No related part yet. Gojo will take the task.",
     "ceoSuggests": "CEO recommends",
     "dispatch": "Ask CEO to delegate",
@@ -185,6 +228,9 @@
     "seedApi": "Sasuke is sketching the Catalog API contract",
     "seedReview": "Goku sent a release checklist for your review",
     "seedTests": "Levi completed the checkout regression suite",
+    "seedCaption": "Đường Tăng is writing a Facebook caption",
+    "seedCarousel": "Bạch Long Mã sent a carousel for review",
+    "seedTrend": "Tôn Ngộ Không caught a rising search",
     "justNow": "just now",
     "minutesAgo": "min ago"
   },
@@ -196,6 +242,13 @@
     "noApproval": "There are no tasks awaiting approval.",
     "sceneError": "3D preview is unavailable in this browser. Your agent roster and task controls are still available.",
     "motionReduced": "Reduced motion is enabled.",
-    "motionRestored": "Character motion is enabled."
+    "motionRestored": "Character motion is enabled.",
+    "agentError": "The agent could not answer. Check the model settings and try again.",
+    "agentBusy": "This map is handling another job. Wait for it to finish and try again.",
+    "agentRateLimited": "You are sending too fast. Wait a moment and try again."
+  },
+  "footer": {
+    "modelLive": "MODEL {model}",
+    "modelDemo": "DEMO MODE (NO MODEL)"
   }
 }

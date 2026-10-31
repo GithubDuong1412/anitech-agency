@@ -1,7 +1,7 @@
 import type { AgentId } from "./roster";
 
 export type TaskStatus = "active" | "review" | "complete";
-export type TaskTitleKey = "catalogApi" | "checkoutTests" | "adminAudit" | "custom";
+export type TaskTitleKey = "catalogApi" | "checkoutTests" | "adminAudit" | "facebookCaption" | "carouselBrief" | "custom";
 
 export interface Task {
   id: string;

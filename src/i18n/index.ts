@@ -24,7 +24,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function translate(locale: Locale, key: string): string {
+export function translate(locale: Locale, key: string, params?: Record<string, string | number>): string {
   let value: unknown = dictionaries[locale];
 
   for (const segment of key.split(".")) {
@@ -32,5 +32,10 @@ export function translate(locale: Locale, key: string): string {
     value = value[segment];
   }
 
-  return typeof value === "string" ? value : key;
+  if (typeof value !== "string") return key;
+  if (!params) return value;
+  return value.replace(/\{(\w+)\}/g, (match, name: string) => {
+    const replacement = params[name];
+    return replacement === undefined ? match : String(replacement);
+  });
 }

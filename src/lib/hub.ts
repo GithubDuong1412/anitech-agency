@@ -19,8 +19,10 @@ export interface HubMessage {
   threadId: string;
   from: AgentId;
   kind: HubMessageKind;
-  /** i18n key under hub.msg.* */
-  textKey: string;
+  /** i18n key under hub.msg.* (seeded and demo messages). */
+  textKey?: string;
+  /** Real text written by an agent. Wins over textKey when both exist. */
+  text?: string;
   at: number;
 }
 
@@ -30,28 +32,36 @@ export interface HubState {
   messages: HubMessage[];
   /** Latest hub version each agent has received. */
   knownVersion: Record<AgentId, number>;
+  /** Agents this hub syncs. Omitted only by states created before departments existed. */
+  agentIds: AgentId[];
 }
 
-function allKnown(version: number): Record<AgentId, number> {
-  return Object.fromEntries(AGENT_IDS.map((id) => [id, version])) as Record<AgentId, number>;
+function idsOf(state: HubState): readonly AgentId[] {
+  return state.agentIds?.length ? state.agentIds : AGENT_IDS;
 }
 
-export function createHub(): HubState {
-  return { version: 0, threads: [], messages: [], knownVersion: allKnown(0) };
+function allKnown(ids: readonly AgentId[], version: number): Record<AgentId, number> {
+  return Object.fromEntries(ids.map((id) => [id, version])) as Record<AgentId, number>;
 }
 
-/** Push the current hub version to every agent (full sync). */
+export function createHub(agentIds: readonly AgentId[] = AGENT_IDS): HubState {
+  const ids = Array.from(agentIds);
+  return { version: 0, threads: [], messages: [], knownVersion: allKnown(ids, 0), agentIds: ids };
+}
+
+/** Push the current hub version to every agent in this hub (full sync). */
 export function syncAll(state: HubState): HubState {
-  return { ...state, knownVersion: allKnown(state.version) };
+  const ids = Array.from(idsOf(state));
+  return { ...state, agentIds: ids, knownVersion: allKnown(ids, state.version) };
 }
 
 /** Agents that are not up to date with the hub. */
 export function unsyncedAgents(state: HubState): AgentId[] {
-  return AGENT_IDS.filter((id) => state.knownVersion[id] < state.version);
+  return idsOf(state).filter((id) => state.knownVersion[id] < state.version);
 }
 
 export function syncedCount(state: HubState): number {
-  return AGENT_IDS.length - unsyncedAgents(state).length;
+  return idsOf(state).length - unsyncedAgents(state).length;
 }
 
 export function openThread(
@@ -95,7 +105,7 @@ export function closeThread(state: HubState, threadId: string): HubState {
  */
 export function postMessage(
   state: HubState,
-  input: { id: string; threadId: string; from: AgentId; kind: HubMessageKind; textKey: string; at: number },
+  input: { id: string; threadId: string; from: AgentId; kind: HubMessageKind; textKey?: string; text?: string; at: number },
 ): HubState {
   const thread = state.threads.find((item) => item.id === input.threadId);
   if (!thread || thread.status === "closed" || !thread.participants.includes(input.from)) return state;
@@ -105,6 +115,23 @@ export function postMessage(
     messages: [...state.messages, input],
     threads: state.threads.map((item) => item.id === thread.id ? { ...item, status: "synced" } : item),
   });
+}
+
+/**
+ * Apply a thread or message the server just stored. Used by the client while a task streams in,
+ * so the local hub follows the database without refetching everything.
+ */
+export function applyRemote(state: HubState, update: { thread?: HubThread; message?: HubMessage }): HubState {
+  let threads = state.threads;
+  if (update.thread) {
+    const incoming = update.thread;
+    threads = threads.some((item) => item.id === incoming.id)
+      ? threads.map((item) => item.id === incoming.id ? incoming : item)
+      : [...threads, incoming];
+  }
+  let messages = state.messages;
+  if (update.message && !messages.some((item) => item.id === update.message?.id)) messages = [...messages, update.message];
+  return syncAll({ ...state, version: state.version + 1, threads, messages });
 }
 
 export type ScriptStep = { from: AgentId; kind: HubMessageKind; textKey: string };

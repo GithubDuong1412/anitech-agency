@@ -10,14 +10,15 @@
     "workspace": "ESPACE DE TRAVAIL",
     "controlRoom": "Salle de contrôle",
     "agentRoster": "Équipe d’agents",
-    "workQueue": "File de travail"
+    "workQueue": "File de travail",
+    "pendingApproval": "{count} en attente d’approbation"
   },
   "dashboard": {
     "companyLabel": "VOTRE ENTREPRISE IA PRIVÉE",
     "livePreview": "APERÇU EN DIRECT",
     "createTask": "Créer une tâche",
     "teamReady": "L’équipe est prête",
-    "teamReadyDetail": "Supervision du CEO · 6 spécialistes disponibles",
+    "teamReadyDetail": "Supervision du CEO · {count} spécialistes disponibles",
     "teamWorking": "L’équipe collabore",
     "teamWorkingDetail": "CEO en coordination · travail en cours",
     "awaitingApproval": "En attente de votre validation",
@@ -27,7 +28,7 @@
   },
   "office": {
     "kicker": "PLAN DE L’ESPACE",
-    "title": "Un studio, sept rôles",
+    "title": "Un studio, {count} rôles",
     "hint": "Sélectionnez un collègue",
     "sceneDescription": "Bureau 3D isométrique avec sept zones de travail et un espace de réunion central.",
     "rooms": {
@@ -37,7 +38,15 @@
       "senior": "SALLE D’ARCHITECTURE",
       "testing": "ZONE DE TESTS",
       "reality": "PORTE DE LIVRAISON",
-      "ceo": "BUREAU DU CEO"
+      "ceo": "BUREAU DU CEO",
+      "socialCeo": "SALLE DE DIRECTION",
+      "director": "PAVILLON STRATÉGIE",
+      "copy": "ATELIER TEXTE",
+      "image": "ATELIER IMAGE",
+      "trend": "POSTE TENDANCES",
+      "community": "SALLE COMMUNAUTÉ",
+      "ads": "ATELIER PUBLICITÉ",
+      "carousel": "ATELIER CARROUSEL"
     },
     "legendReady": "Disponible",
     "legendWorking": "En cours",
@@ -47,7 +56,11 @@
     "zoomIn": "Zoomer",
     "zoomReset": "Réinitialiser",
     "zoomAll": "Zoom all",
-    "zoomExit": "Réduire"
+    "zoomExit": "Réduire",
+    "workspacesLabel": "Espaces de travail",
+    "workspaceIt": "IT Research",
+    "workspaceSocial": "Social Marketing",
+    "socialEmpty": "Cet espace n'a pas encore de personnages."
   },
   "roster": {
     "kicker": "ÉQUIPE",
@@ -66,7 +79,15 @@
     "security": "Ingénieur sécurité applicative",
     "testing": "Ingénieur automatisation des tests",
     "reality": "Contrôleur qualité de livraison",
-    "ceo": "Direction générale · Validateur"
+    "ceo": "Direction générale · Validateur",
+    "socialCeo": "Responsable Social · Coordinateur",
+    "director": "Directrice de contenu Facebook",
+    "copy": "Rédacteur de captions",
+    "image": "Ingénieur de prompts image",
+    "trend": "Chasseur de tendances",
+    "community": "Communauté et Messenger",
+    "ads": "Stratège publicitaire",
+    "carousel": "Structure de carrousel"
   },
   "focus": {
     "backend": "API · schéma · base de données",
@@ -75,7 +96,15 @@
     "security": "Menaces · auth · AppSec",
     "testing": "Playwright · régression · CI",
     "reality": "Critères · preuves · livraison",
-    "ceo": "Direction · délégation · validation"
+    "ceo": "Direction · délégation · validation",
+    "socialCeo": "Coordination · attribution · revue",
+    "director": "Piliers · calendrier · mix",
+    "copy": "Hook · caption · CTA · hashtag",
+    "image": "Prompt · Midjourney · 4:5",
+    "trend": "Hot search · Facebook · Google",
+    "community": "Commentaires · Messenger · réponses",
+    "ads": "Pain point · création · Facebook Ads",
+    "carousel": "3–5 slides · infographie · CTA"
   },
   "profiles": {
     "backend": "Conçoit API, modèles de données et flux backend avec cohérence et compatibilité.",
@@ -84,7 +113,15 @@
     "security": "Évalue les menaces, l’authentification, les autorisations et les données sensibles.",
     "testing": "Conçoit des tests automatisés fiables et des preuves reproductibles.",
     "reality": "Contrôle qualité fondé sur des preuves avant la livraison.",
-    "ceo": "Fixe les priorités, délègue et valide. Les changements exigent votre accord."
+    "ceo": "Fixe les priorités, délègue et valide. Les changements exigent votre accord.",
+    "socialCeo": "Coordonne l'étage social, assigne texte, image et revue. Rien n'est fini sans votre accord.",
+    "director": "Fixe les piliers, le calendrier et le mix vente / valeur. Contrôle la qualité avant vous.",
+    "copy": "Écrit des captions Facebook : accroche courte, corps lisible, emoji par bloc, CTA clair et hashtags justes.",
+    "image": "Écrit des prompts en anglais alignés sur le post, en 1:1, 4:5 ou 16:9.",
+    "trend": "Repère les sujets et recherches en hausse sur Facebook ou Google et en fait une idée à temps.",
+    "community": "Prépare des réponses aux commentaires et à Messenger, sans inventer de règle.",
+    "ads": "Propose des angles publicitaires autour d'un pain point, avec titre et CTA.",
+    "carousel": "Découpe un post en 3 à 5 slides Facebook : problème, solution et CTA final."
   },
   "profile": {
     "kicker": "PROFIL DE L'AGENT",
@@ -128,7 +165,8 @@
       "handoff": "A pris la partie concernée et fera un retour au centre.",
       "review": "Contrôle qualité terminé ; prêt pour validation.",
       "approved": "Approuvé. La conversation est close.",
-      "returned": "Renvoyé pour modifications. Le responsable continue."
+      "returned": "Renvoyé pour modifications. Le responsable continue.",
+      "llmError": "Je n’ai pas pu obtenir de réponse du modèle. Renvoyez ou vérifiez la configuration du modèle."
     }
   },
   "queue": {
@@ -149,15 +187,20 @@
     "catalogApi": "Concevoir la pagination de Catalog API",
     "checkoutTests": "Suite de régression du checkout",
     "adminAudit": "Vérifier les droits d’accès admin",
+    "facebookCaption": "Écrire un caption Facebook pour le nouveau produit",
+    "carouselBrief": "Carrousel Facebook de 4 slides",
     "newAssignment": "NOUVELLE MISSION",
     "modalTitle": "Donnez un cap à l’équipe",
     "label": "Que faut-il accomplir ?",
     "placeholder": "Ex. : vérifier la connexion et proposer des tests…",
-    "hint": "Choisissez les parties concernées. Gojo prend la tâche par défaut ; les personnes liées travaillent avec lui.",
+    "placeholderSocial": "Ex. : écrire un post Facebook avec une accroche, puis un prompt 4:5…",
+    "hint": "Le responsable proposé est la personne sélectionnée ci-dessus. {fallback} prend la tâche si rien n'est choisi.",
     "areaLabel": "Cette tâche concerne quelle partie ?",
     "ownerLabel": "Responsable suggéré",
-    "defaultOwner": "Par défaut · Senior",
+    "leadLabel": "Responsable principal",
+    "defaultOwner": "Par défaut · {name}",
     "together": "Travaille avec",
+    "togetherEmpty": "Personne",
     "togetherNone": "Aucune partie liée. Gojo prendra la tâche.",
     "ceoSuggests": "Suggestion du CEO",
     "dispatch": "Demander l’affectation au CEO",
@@ -185,6 +228,9 @@
     "seedApi": "Sasuke prépare le contrat de Catalog API",
     "seedReview": "Goku a envoyé une checklist de livraison",
     "seedTests": "Levi a terminé les tests de checkout",
+    "seedCaption": "Đường Tăng écrit un caption Facebook",
+    "seedCarousel": "Bạch Long Mã a envoyé un carrousel à valider",
+    "seedTrend": "Tôn Ngộ Không a repéré une recherche en hausse",
     "justNow": "à l’instant",
     "minutesAgo": "min"
   },
@@ -196,6 +242,13 @@
     "noApproval": "Aucune tâche en attente de validation.",
     "sceneError": "L’aperçu 3D n’est pas disponible dans ce navigateur. L’équipe et les tâches restent accessibles.",
     "motionReduced": "La réduction des animations est activée.",
-    "motionRestored": "Animations des personnages activées."
+    "motionRestored": "Animations des personnages activées.",
+    "agentError": "L’agent n’a pas pu répondre. Vérifiez la configuration du modèle et réessayez.",
+    "agentBusy": "Cette carte traite déjà une autre tâche. Attendez la fin puis réessayez.",
+    "agentRateLimited": "Vous envoyez trop vite. Patientez un instant puis réessayez."
+  },
+  "footer": {
+    "modelLive": "MODÈLE {model}",
+    "modelDemo": "MODE DÉMO (SANS MODÈLE)"
   }
 }

@@ -10,14 +10,15 @@
     "workspace": "KHÔNG GIAN LÀM VIỆC",
     "controlRoom": "Phòng điều hành",
     "agentRoster": "Đội ngũ Agent",
-    "workQueue": "Hàng đợi công việc"
+    "workQueue": "Hàng đợi công việc",
+    "pendingApproval": "{count} việc chờ phê duyệt"
   },
   "dashboard": {
     "companyLabel": "CÔNG TY AI CỦA BẠN",
     "livePreview": "BẢN XEM TRỰC TIẾP",
     "createTask": "Tạo nhiệm vụ",
     "teamReady": "Đội ngũ sẵn sàng",
-    "teamReadyDetail": "CEO giám sát · 6 chuyên gia đang chờ",
+    "teamReadyDetail": "CEO giám sát · {count} chuyên gia đang chờ",
     "teamWorking": "Đội ngũ đang phối hợp",
     "teamWorkingDetail": "CEO điều phối · công việc đang được xử lý",
     "awaitingApproval": "Đang chờ bạn phê duyệt",
@@ -27,7 +28,7 @@
   },
   "office": {
     "kicker": "SƠ ĐỒ KHÔNG GIAN",
-    "title": "Một Studio, bảy vai trò",
+    "title": "Một studio, {count} vai trò",
     "hint": "Chọn nhân vật để xem",
     "sceneDescription": "Văn phòng 3D isometric với bảy khu vực làm việc và một không gian họp trung tâm.",
     "rooms": {
@@ -37,7 +38,15 @@
       "senior": "PHÒNG KIẾN TRÚC",
       "testing": "SÀN KIỂM THỬ",
       "reality": "CỔNG PHÁT HÀNH",
-      "ceo": "VĂN PHÒNG CEO"
+      "ceo": "VĂN PHÒNG CEO",
+      "socialCeo": "ĐIỆN CHỈ ĐẠO",
+      "director": "ĐÀI CHIẾN LƯỢC",
+      "copy": "VIỆN NỘI DUNG",
+      "image": "ĐÀI TẠO ẢNH",
+      "trend": "ĐÀI XU HƯỚNG",
+      "community": "SẢNH CỘNG ĐỒNG",
+      "ads": "XƯỞNG ADS",
+      "carousel": "XƯỞNG CAROUSEL"
     },
     "legendReady": "Sẵn sàng",
     "legendWorking": "Đang làm",
@@ -47,7 +56,11 @@
     "zoomIn": "Phóng to",
     "zoomReset": "Reset",
     "zoomAll": "Zoom all",
-    "zoomExit": "Thu gọn"
+    "zoomExit": "Thu gọn",
+    "workspacesLabel": "Không gian làm việc",
+    "workspaceIt": "IT Research",
+    "workspaceSocial": "Social Marketing",
+    "socialEmpty": "Sàn này chưa có nhân vật."
   },
   "roster": {
     "kicker": "DANH SÁCH ĐỘI NGŨ",
@@ -66,7 +79,15 @@
     "security": "Kỹ sư bảo mật ứng dụng",
     "testing": "Kỹ sư tự động hóa kiểm thử",
     "reality": "Kiểm định chất lượng phát hành",
-    "ceo": "Giám đốc điều hành · Người phê duyệt"
+    "ceo": "Giám đốc điều hành · Người phê duyệt",
+    "socialCeo": "Trưởng phòng Social · Người điều phối",
+    "director": "Giám đốc nội dung Facebook",
+    "copy": "Viết caption Facebook",
+    "image": "Kỹ sư prompt ảnh AI",
+    "trend": "Săn xu hướng và từ khóa nóng",
+    "community": "Chăm sóc bình luận và Messenger",
+    "ads": "Chiến lược hình ảnh quảng cáo",
+    "carousel": "Cấu trúc carousel Facebook"
   },
   "focus": {
     "backend": "API · schema · database",
@@ -75,7 +96,15 @@
     "security": "Threat modeling · auth · AppSec",
     "testing": "Playwright · regression · CI",
     "reality": "Tiêu chí · bằng chứng · cổng phát hành",
-    "ceo": "Định hướng · giao việc · phê duyệt"
+    "ceo": "Định hướng · giao việc · phê duyệt",
+    "socialCeo": "Điều phối · giao bài · trình duyệt",
+    "director": "Trụ nội dung · lịch đăng · tỷ lệ bài",
+    "copy": "Hook · caption · CTA · hashtag",
+    "image": "Prompt · Midjourney · tỷ lệ 4:5",
+    "trend": "Hot search · Facebook · Google",
+    "community": "Comment · Messenger · kịch bản trả lời",
+    "ads": "Pain point · ad creative · Facebook Ads",
+    "carousel": "3–5 slide · infographic · CTA"
   },
   "profiles": {
     "backend": "Thiết kế API, mô hình dữ liệu và luồng backend, ưu tiên nhất quán, khả năng mở rộng và tương thích ngược.",
@@ -84,7 +113,15 @@
     "security": "Rà soát threat model, xác thực, phân quyền và dữ liệu nhạy cảm; báo cáo rủi ro có căn cứ.",
     "testing": "Xây dựng test tự động ổn định, cô lập dữ liệu và bằng chứng giúp tái hiện lỗi.",
     "reality": "Quality gate dựa trên bằng chứng: kiểm tra tiêu chí nghiệm thu, test và rủi ro còn lại trước khi phát hành.",
-    "ceo": "Giám sát ưu tiên, phân công và phê duyệt. Thay đổi project và deploy cần bạn xác nhận."
+    "ceo": "Giám sát ưu tiên, phân công và phê duyệt. Thay đổi project và deploy cần bạn xác nhận.",
+    "socialCeo": "Điều phối phòng Social Marketing, giao đúng người viết, ảnh và duyệt. Bài chưa được bạn xác nhận thì chưa coi là xong.",
+    "director": "Chốt trụ nội dung, lịch đăng và tỷ lệ bài bán hàng với bài giá trị. Duyệt chất lượng trước khi trình bạn.",
+    "copy": "Viết caption Facebook: hook ngắn, thân bài dễ đọc, emoji dẫn đoạn, CTA rõ và hashtag gọn.",
+    "image": "Viết prompt tiếng Anh khớp bài viết, đúng tỷ lệ 1:1, 4:5 hoặc 16:9 cho ảnh Facebook.",
+    "trend": "Bắt chủ đề và từ khóa đang tăng trên Facebook hoặc Google, biến thành ý bài kịp thời.",
+    "community": "Soạn kịch bản trả lời bình luận và tin nhắn Messenger, giữ giọng và không bịa chính sách.",
+    "ads": "Đưa góc hình quảng cáo bám pain point, kèm headline và CTA để thử trên Facebook Ads.",
+    "carousel": "Tách bài thành 3–5 slide Facebook: vấn đề, giải pháp và lời kêu gọi ở slide cuối."
   },
   "profile": {
     "kicker": "HỒ SƠ AGENT",
@@ -128,7 +165,8 @@
       "handoff": "Nhận phần việc liên quan và sẽ báo lại cho trung tâm.",
       "review": "Đã qua cổng chất lượng; sẵn sàng để duyệt.",
       "approved": "Đã duyệt. Cuộc trao đổi được đóng.",
-      "returned": "Đã gửi lại để chỉnh sửa. Người phụ trách tiếp tục."
+      "returned": "Đã gửi lại để chỉnh sửa. Người phụ trách tiếp tục.",
+      "llmError": "Mình chưa lấy được câu trả lời từ model. Bạn thử gửi lại hoặc kiểm tra cấu hình model nhé."
     }
   },
   "queue": {
@@ -149,15 +187,20 @@
     "catalogApi": "Thiết kế pagination cho Catalog API",
     "checkoutTests": "Bộ test hồi quy checkout",
     "adminAudit": "Rà soát quyền truy cập quản trị",
+    "facebookCaption": "Viết caption Facebook cho sản phẩm mới",
+    "carouselBrief": "Bộ carousel 4 slide Facebook",
     "newAssignment": "GIAO NHIỆM VỤ MỚI",
     "modalTitle": "Cho đội ngũ một mục tiêu",
     "label": "Bạn muốn hoàn thành việc gì?",
     "placeholder": "Ví dụ: Rà soát luồng đăng nhập và đề xuất test hồi quy…",
-    "hint": "Chọn phần liên quan. Gojo nhận việc mặc định; người khớp phần đó sẽ làm cùng.",
+    "placeholderSocial": "Ví dụ: Viết bài đăng Facebook có hook, rồi tạo prompt ảnh 4:5…",
+    "hint": "Người phụ trách là người được chọn ở phần liên quan. Chưa chọn phần nào thì {fallback} nhận việc.",
     "areaLabel": "Task này liên quan đến phần nào?",
     "ownerLabel": "Người phụ trách đề xuất",
-    "defaultOwner": "Mặc định · Senior",
+    "leadLabel": "Người phụ trách chính",
+    "defaultOwner": "Mặc định · {name}",
     "together": "Làm cùng",
+    "togetherEmpty": "Không có",
     "togetherNone": "Chưa có phần liên quan. Gojo sẽ nhận việc.",
     "ceoSuggests": "CEO đề xuất",
     "dispatch": "Để CEO phân công",
@@ -185,6 +228,9 @@
     "seedApi": "Sasuke đang phác thảo contract cho Catalog API",
     "seedReview": "Goku gửi checklist phát hành để bạn duyệt",
     "seedTests": "Levi hoàn tất bộ test hồi quy checkout",
+    "seedCaption": "Đường Tăng đang viết caption Facebook",
+    "seedCarousel": "Bạch Long Mã gửi bộ carousel để duyệt",
+    "seedTrend": "Tôn Ngộ Không bắt một cụm từ khóa đang tăng",
     "justNow": "vừa xong",
     "minutesAgo": "phút trước"
   },
@@ -196,6 +242,13 @@
     "noApproval": "Hiện không có nhiệm vụ chờ phê duyệt.",
     "sceneError": "Trình duyệt chưa hỗ trợ xem 3D. Danh sách Agent và điều khiển nhiệm vụ vẫn dùng được.",
     "motionReduced": "Đã bật chế độ giảm chuyển động.",
-    "motionRestored": "Đã bật chuyển động nhân vật."
+    "motionRestored": "Đã bật chuyển động nhân vật.",
+    "agentError": "Agent chưa trả lời được. Kiểm tra cấu hình model rồi thử lại.",
+    "agentBusy": "Sơ đồ này đang xử lý một việc khác. Đợi xong rồi thử lại.",
+    "agentRateLimited": "Bạn gửi hơi nhanh. Đợi một chút rồi thử lại."
+  },
+  "footer": {
+    "modelLive": "MODEL {model}",
+    "modelDemo": "CHẾ ĐỘ DEMO (CHƯA CÓ MODEL)"
   }
 }

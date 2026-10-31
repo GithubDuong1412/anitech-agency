@@ -10,14 +10,15 @@
     "workspace": "工作空间",
     "controlRoom": "控制室",
     "agentRoster": "Agent 团队",
-    "workQueue": "任务队列"
+    "workQueue": "任务队列",
+    "pendingApproval": "{count} 项待审批"
   },
   "dashboard": {
     "companyLabel": "你的专属 AI 公司",
     "livePreview": "实时预览",
     "createTask": "创建任务",
     "teamReady": "团队已就绪",
-    "teamReadyDetail": "CEO 监督 · 6 位专家待命",
+    "teamReadyDetail": "CEO 监督 · {count} 位专家待命",
     "teamWorking": "团队正在协作",
     "teamWorkingDetail": "CEO 正在协调 · 任务处理中",
     "awaitingApproval": "等待你审批",
@@ -27,7 +28,7 @@
   },
   "office": {
     "kicker": "办公区地图",
-    "title": "一个工作室，七种角色",
+    "title": "一个工作室，{count} 种角色",
     "hint": "点击成员查看详情",
     "sceneDescription": "等距 3D 办公室，包含七个 Agent 工作区和一个中央会议区。",
     "rooms": {
@@ -37,7 +38,15 @@
       "senior": "架构室",
       "testing": "测试区",
       "reality": "发布关卡",
-      "ceo": "CEO 办公室"
+      "ceo": "CEO 办公室",
+      "socialCeo": "指挥殿",
+      "director": "策略台",
+      "copy": "文案院",
+      "image": "造像台",
+      "trend": "趋势台",
+      "community": "社群厅",
+      "ads": "广告坊",
+      "carousel": "轮播坊"
     },
     "legendReady": "待命",
     "legendWorking": "工作中",
@@ -47,7 +56,11 @@
     "zoomIn": "放大",
     "zoomReset": "重置",
     "zoomAll": "Zoom all",
-    "zoomExit": "退出全图"
+    "zoomExit": "退出全图",
+    "workspacesLabel": "工作区",
+    "workspaceIt": "IT Research",
+    "workspaceSocial": "Social Marketing",
+    "socialEmpty": "此工作区还没有角色。"
   },
   "roster": {
     "kicker": "团队成员",
@@ -66,7 +79,15 @@
     "security": "应用安全工程师",
     "testing": "测试自动化工程师",
     "reality": "发布质量审核员",
-    "ceo": "首席执行官 · 审批人"
+    "ceo": "首席执行官 · 审批人",
+    "socialCeo": "社交部门主管 · 协调人",
+    "director": "Facebook 内容总监",
+    "copy": "Facebook 文案",
+    "image": "AI 图像提示工程师",
+    "trend": "趋势与热搜猎手",
+    "community": "评论与 Messenger 互动",
+    "ads": "付费创意策略",
+    "carousel": "Facebook 轮播结构"
   },
   "focus": {
     "backend": "API · 数据结构 · 数据库",
@@ -75,7 +96,15 @@
     "security": "威胁建模 · 身份验证 · AppSec",
     "testing": "Playwright · 回归测试 · CI",
     "reality": "验收条件 · 证据 · 发布关卡",
-    "ceo": "方向 · 委派 · 审批"
+    "ceo": "方向 · 委派 · 审批",
+    "socialCeo": "协调 · 分派 · 送审",
+    "director": "内容支柱 · 排期 · 比例",
+    "copy": "Hook · 文案 · CTA · 话题标签",
+    "image": "Prompt · Midjourney · 4:5",
+    "trend": "热搜 · Facebook · Google",
+    "community": "评论 · Messenger · 回复脚本",
+    "ads": "痛点 · 广告创意 · Facebook Ads",
+    "carousel": "3–5 张 · 信息图 · CTA"
   },
   "profiles": {
     "backend": "设计 API、数据模型和后端流程，注重一致性、扩展性和向后兼容。",
@@ -84,7 +113,15 @@
     "security": "审查威胁模型、身份验证、授权和敏感数据，并提供有依据的风险说明。",
     "testing": "构建稳定的自动化测试、隔离测试数据和可复现证据。",
     "reality": "基于证据执行发布质量关卡，检查验收条件、测试和剩余风险。",
-    "ceo": "确定优先级、分配任务并审批。项目修改和部署需要你确认。"
+    "ceo": "确定优先级、分配任务并审批。项目修改和部署需要你确认。",
+    "socialCeo": "协调社交部门，分派文案、图像和审核。未经你确认，帖子不算完成。",
+    "director": "确定内容支柱、发布节奏，以及销售帖与价值帖的比例。在交给你之前先做质量审核。",
+    "copy": "撰写 Facebook 文案：短钩子、易读正文、用表情分段、明确 CTA 和少量话题标签。",
+    "image": "用英文写与帖子匹配的图像提示，比例为 1:1、4:5 或 16:9。",
+    "trend": "捕捉 Facebook 或 Google 上正在上升的话题和搜索词，及时变成帖子创意。",
+    "community": "准备评论和 Messenger 回复脚本，保持语气，不编造政策。",
+    "ads": "围绕痛点提出广告角度，并附上标题和 CTA，供 Facebook Ads 测试。",
+    "carousel": "把一篇帖子拆成 3–5 张 Facebook 幻灯：问题、解法，最后一张放 CTA。"
   },
   "profile": {
     "kicker": "代理档案",
@@ -128,7 +165,8 @@
       "handoff": "已接手相关部分，并会向中枢汇报。",
       "review": "质量关卡已完成，可以审批。",
       "approved": "已批准，对话关闭。",
-      "returned": "已退回修改，负责人继续处理。"
+      "returned": "已退回修改，负责人继续处理。",
+      "llmError": "我没能从模型获得回答。请重新发送，或检查模型配置。"
     }
   },
   "queue": {
@@ -149,15 +187,20 @@
     "catalogApi": "为 Catalog API 设计分页",
     "checkoutTests": "Checkout 回归测试套件",
     "adminAudit": "检查管理员访问控制",
+    "facebookCaption": "为新产品写一条 Facebook 文案",
+    "carouselBrief": "4 张幻灯的 Facebook 轮播",
     "newAssignment": "新建任务",
     "modalTitle": "为团队设定目标",
     "label": "需要完成什么？",
     "placeholder": "例如：检查登录流程并提出回归测试方案…",
-    "hint": "选择任务相关的部分。默认由 Gojo 负责，相关的人会一起做。",
+    "placeholderSocial": "例如：写一条带钩子的 Facebook 帖子，再配 4:5 图像提示…",
+    "hint": "建议负责人就是上方选中的人。没有选中任何部分时交给 {fallback}。",
     "areaLabel": "这个任务和哪一部分有关？",
     "ownerLabel": "推荐负责人",
-    "defaultOwner": "默认 · Senior",
+    "leadLabel": "主要负责人",
+    "defaultOwner": "默认 · {name}",
     "together": "一起做",
+    "togetherEmpty": "无",
     "togetherNone": "还没有相关部分。将交给 Gojo。",
     "ceoSuggests": "由 CEO 推荐",
     "dispatch": "请 CEO 分配",
@@ -185,6 +228,9 @@
     "seedApi": "Sasuke 正在设计 Catalog API 合约",
     "seedReview": "Goku 已提交发布清单供你审核",
     "seedTests": "Levi 已完成 checkout 回归测试",
+    "seedCaption": "Đường Tăng 正在写 Facebook 文案",
+    "seedCarousel": "Bạch Long Mã 提交了轮播待审",
+    "seedTrend": "Tôn Ngộ Không 捕捉到一个上升搜索词",
     "justNow": "刚刚",
     "minutesAgo": "分钟前"
   },
@@ -196,6 +242,13 @@
     "noApproval": "当前没有等待审批的任务。",
     "sceneError": "此浏览器无法显示 3D 预览。团队列表和任务控制仍可使用。",
     "motionReduced": "已启用减少动态效果。",
-    "motionRestored": "角色动态已启用。"
+    "motionRestored": "角色动态已启用。",
+    "agentError": "智能体无法回答。请检查模型配置后重试。",
+    "agentBusy": "此地图正在处理另一项任务。请等待完成后重试。",
+    "agentRateLimited": "发送太快了。请稍等片刻后重试。"
+  },
+  "footer": {
+    "modelLive": "模型 {model}",
+    "modelDemo": "演示模式（未配置模型）"
   }
 }
