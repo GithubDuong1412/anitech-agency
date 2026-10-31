@@ -10,10 +10,12 @@ type Props = {
   hub: HubState;
   agents: ReadonlyArray<Agent>;
   talkingIds: readonly AgentId[];
+  /** When set, the dialog shows only this task's conversation. */
+  taskId?: string | null;
   t: (key: string) => string;
 };
 
-export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }: Props) {
+export default function HubDialog({ open, onClose, hub, agents, talkingIds, taskId, t }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const [filter, setFilter] = useState<"all" | AgentId>("all");
 
@@ -26,7 +28,15 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }:
 
   const nameOf = (id: AgentId) => agentName(id);
   const agentOf = (id: AgentId) => agents.find((agent) => agent.id === id);
-  const threads = hub.threads.filter((thread) => filter === "all" || thread.participants.includes(filter));
+  const focused = Boolean(taskId);
+  const threads = hub.threads.filter((thread) => {
+    if (taskId) return thread.taskId === taskId;
+    return filter === "all" || thread.participants.includes(filter);
+  });
+  const focusedThread = threads[0];
+  const dialogTitle = focusedThread
+    ? (focusedThread.topicKey ? t("tasks." + focusedThread.topicKey) : focusedThread.topicTitle ?? t("hub.title"))
+    : t("hub.title");
   const synced = syncedCount(hub);
 
   function people(ids: readonly AgentId[], muted = false) {
@@ -58,19 +68,19 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }:
           <div className="modal-head hub-head">
             <div>
               <span className="section-kicker">{t("hub.kicker")}</span>
-              <h2 id="hub-dialog-title">{t("hub.title")}</h2>
-              <p className="hub-sub">{t("hub.subtitle")}</p>
+              <h2 id="hub-dialog-title">{dialogTitle}</h2>
+              {!focused && <p className="hub-sub">{t("hub.subtitle")}</p>}
             </div>
             <button className="modal-close" type="button" aria-label={t("profile.close")} onClick={onClose}>×</button>
           </div>
 
-          <div className="hub-stats">
+          {!focused && <div className="hub-stats">
             <div><span>{t("hub.version")}</span><b>v{hub.version}</b></div>
             <div><span>{t("hub.synced")}</span><b>{synced}/{agents.length}</b></div>
             <div><span>{t("hub.threads")}</span><b>{hub.threads.length}</b></div>
-          </div>
+          </div>}
 
-          <div className="hub-chips" role="group" aria-label={t("hub.filter")}>
+          {!focused && <div className="hub-chips" role="group" aria-label={t("hub.filter")}>
             <button type="button" className={"hub-chip" + (filter === "all" ? " selected" : "")} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>{t("hub.all")}</button>
             {agents.map((agent) => (
               <button
@@ -85,7 +95,7 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }:
                 {agent.name}
               </button>
             ))}
-          </div>
+          </div>}
 
           <div className="hub-threads">
             {threads.length === 0 && <div className="empty-state">{t("hub.empty")}</div>}
@@ -103,10 +113,10 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }:
                     <span>{t("hub.participants")}</span>
                     {people(thread.participants)}
                   </div>
-                  <div className="hub-meta is-muted">
+                  {!focused && <div className="hub-meta is-muted">
                     <span>{t("hub.watching")}</span>
                     {watchers.length === 0 ? <em>-</em> : people(watchers.map((agent) => agent.id), true)}
-                  </div>
+                  </div>}
                   <ol className="hub-messages">
                     {messages.length === 0 && <li className="hub-message-empty">{t("hub.noMessages")}</li>}
                     {messages.map((message) => {
