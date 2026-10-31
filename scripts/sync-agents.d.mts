@@ -3,6 +3,7 @@ export const TEAM_RULE: string;
 
 export interface SyncOptions {
   rosterPath: string;
+  rosterSocialPath?: string | null;
   personasDir: string;
   vendorDir: string;
   outDir: string;

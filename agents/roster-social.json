@@ -1,0 +1,109 @@
+[
+  {
+    "id": "haotu",
+    "name": "Dương Hạo Tử",
+    "role": "socialCeo",
+    "title": "Trưởng phòng",
+    "color": "#f0c14a",
+    "rule": "hao-tu-lead",
+    "keywords": [],
+    "collaborators": [],
+    "map": { "x": 50, "y": 25, "height": 24, "label": { "x": 60, "y": 6 } },
+    "assets": { "avatar": "/characters-social/haotu/avatar.png", "sprite": "/characters-social/haotu/sprite.png" },
+    "agents": ["specialized/agents-orchestrator.md"]
+  },
+  {
+    "id": "quanam",
+    "name": "Quan Thế Âm",
+    "role": "director",
+    "title": "Chiến lược",
+    "color": "#f3d7a1",
+    "rule": "quan-am-director",
+    "keywords": ["chiến lược", "content pillar", "content pillars", "lịch đăng", "posting schedule", "tỷ lệ bài", "định hướng nội dung", "editorial"],
+    "collaborators": ["duongtang"],
+    "map": { "x": 88, "y": 26, "height": 20, "label": { "x": 82, "y": 5 } },
+    "assets": { "avatar": "/characters-social/quanam/avatar.png", "sprite": "/characters-social/quanam/sprite.png" },
+    "agents": ["marketing/marketing-social-media-strategist.md"]
+  },
+  {
+    "id": "ngokhong",
+    "name": "Tôn Ngộ Không",
+    "role": "trend",
+    "title": "Săn xu hướng",
+    "color": "#ff7a3c",
+    "rule": "ngo-khong-trend",
+    "keywords": ["trend", "hot search", "từ khóa hot", "xu hướng", "chủ đề hot", "google trends", "tìm kiếm tăng"],
+    "collaborators": ["duongtang"],
+    "map": { "x": 10, "y": 48, "height": 20, "label": { "x": 21, "y": 34 } },
+    "assets": { "avatar": "/characters-social/ngokhong/avatar.png", "sprite": "/characters-social/ngokhong/sprite.png" },
+    "agents": ["product/product-trend-researcher.md"]
+  },
+  {
+    "id": "phatto",
+    "name": "Như Lai",
+    "role": "image",
+    "title": "Tạo ảnh AI",
+    "color": "#ffd36b",
+    "rule": "phat-to-image",
+    "keywords": ["prompt", "midjourney", "dall-e", "dalle", "flux", "imagen", "sinh ảnh", "tỷ lệ khung", "4:5", "1:1", "16:9", "hình ảnh ai"],
+    "collaborators": ["duongtang"],
+    "map": { "x": 11, "y": 24, "height": 20, "label": { "x": 21, "y": 12 } },
+    "assets": { "avatar": "/characters-social/phatto/avatar.png", "sprite": "/characters-social/phatto/sprite.png" },
+    "agents": ["design/design-image-prompt-engineer.md"]
+  },
+  {
+    "id": "bachlongma",
+    "name": "Bạch Long Mã",
+    "role": "carousel",
+    "title": "Carousel",
+    "color": "#7ec8ff",
+    "rule": "bach-long-ma-carousel",
+    "keywords": ["carousel", "slide", "infographic", "quote card", "bộ ảnh"],
+    "collaborators": ["duongtang", "phatto"],
+    "map": { "x": 91, "y": 48, "height": 20, "label": { "x": 82, "y": 35 } },
+    "assets": { "avatar": "/characters-social/bachlongma/avatar.png", "sprite": "/characters-social/bachlongma/sprite.png" },
+    "agents": ["marketing/marketing-carousel-growth-engine.md"]
+  },
+  {
+    "id": "batgioi",
+    "name": "Chư Bát Giới",
+    "role": "ads",
+    "title": "Quảng cáo",
+    "color": "#e07a5f",
+    "rule": "bat-gioi-ads",
+    "keywords": ["ads", "quảng cáo", "ad creative", "pain point", "facebook ads", "meta ads"],
+    "collaborators": ["phatto"],
+    "map": { "x": 13, "y": 72, "height": 20, "label": { "x": 24, "y": 56 } },
+    "assets": { "avatar": "/characters-social/batgioi/avatar.png", "sprite": "/characters-social/batgioi/sprite.png" },
+    "agents": ["paid-media/paid-media-creative-strategist.md"]
+  },
+  {
+    "id": "satang",
+    "name": "Sa Tăng",
+    "role": "community",
+    "title": "Cộng đồng",
+    "color": "#8eb6ff",
+    "rule": "sa-tang-community",
+    "keywords": ["bình luận", "comment", "messenger", "inbox", "tương tác", "phản hồi", "cộng đồng"],
+    "collaborators": ["duongtang"],
+    "map": { "x": 50, "y": 82, "height": 20, "label": { "x": 40, "y": 66 } },
+    "assets": { "avatar": "/characters-social/satang/avatar.png", "sprite": "/characters-social/satang/sprite.png" },
+    "agents": [
+      "marketing/marketing-content-creator.md",
+      "support/support-analytics-reporter.md"
+    ]
+  },
+  {
+    "id": "duongtang",
+    "name": "Đường Tăng",
+    "role": "copy",
+    "title": "Viết nội dung",
+    "color": "#e23b3b",
+    "rule": "duong-tang-copy",
+    "keywords": ["caption", "hook", "hashtag", "bài đăng", "copy", "cta", "kêu gọi", "emoji"],
+    "collaborators": ["phatto", "bachlongma"],
+    "map": { "x": 87, "y": 74, "height": 20, "label": { "x": 76, "y": 58 } },
+    "assets": { "avatar": "/characters-social/duongtang/avatar.png", "sprite": "/characters-social/duongtang/sprite.png" },
+    "agents": ["marketing/marketing-content-creator.md"]
+  }
+]

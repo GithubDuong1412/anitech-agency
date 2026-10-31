@@ -3,7 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { TEAM_RULE, defaultPaths, syncAgents, yamlQuote } from "../scripts/sync-agents.mjs";
-import { AGENTS, CEO } from "../src/lib/roster";
+import { AGENTS, CEO, SOCIAL } from "../src/lib/roster";
+
+const ALL = [...AGENTS, ...SOCIAL.agents];
 
 const root = path.resolve(__dirname, "..");
 let outDir = "";
@@ -28,14 +30,14 @@ function frontmatter(text: string) {
 }
 
 describe("sync-agents", () => {
-  it("generates the team rule and one rule per character (8 files)", () => {
-    expect(result.files).toHaveLength(8);
-    const expected = [TEAM_RULE, ...AGENTS.map((agent) => agent.rule)].map((name) => name + ".mdc").sort();
+  it("generates the team rule and one rule per character", () => {
+    expect(result.files).toHaveLength(1 + ALL.length);
+    const expected = [TEAM_RULE, ...ALL.map((agent) => agent.rule)].map((name) => name + ".mdc").sort();
     expect(fs.readdirSync(outDir).sort()).toEqual(expected);
   });
 
   it("writes valid Cursor frontmatter, with the character name in the description", () => {
-    for (const agent of AGENTS) {
+    for (const agent of ALL) {
       const { description, alwaysApply } = frontmatter(read(agent.rule));
       expect(alwaysApply).toBe(false);
       expect(description).toContain(agent.name);
@@ -43,7 +45,7 @@ describe("sync-agents", () => {
   });
 
   it("starts every character rule with the persona, then the upstream skill", () => {
-    for (const agent of AGENTS) {
+    for (const agent of ALL) {
       const { body } = frontmatter(read(agent.rule));
       expect(body.startsWith(`# ${agent.name} — `), agent.id).toBe(true);
       expect(body).toContain("## Kỹ năng: ");
@@ -65,7 +67,7 @@ describe("sync-agents", () => {
   it("makes the team rule always-applied and lists every character", () => {
     const { alwaysApply, body } = frontmatter(read(TEAM_RULE));
     expect(alwaysApply).toBe(true);
-    for (const agent of AGENTS) {
+    for (const agent of ALL) {
       expect(body).toContain(agent.name);
       expect(body).toContain("`@" + agent.rule + "`");
     }

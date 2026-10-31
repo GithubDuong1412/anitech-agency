@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SOCIAL } from "../src/lib/roster";
 import { closeThread, conversationScript, createHub, joinThread, openThread, postMessage, syncedCount, unsyncedAgents } from "../src/lib/hub";
 
 describe("data hub", () => {
@@ -27,6 +28,13 @@ describe("data hub", () => {
     hub = closeThread(hub, "t1");
     const after = postMessage(hub, { id: "m", threadId: "t1", from: "goku", kind: "review", textKey: "hub.msg.review", at: 2 });
     expect(after.messages).toHaveLength(0);
+  });
+
+  it("syncs the social floor on its own roster", () => {
+    const hub = openThread(createHub(SOCIAL.agents.map((agent) => agent.id)), { id: "s1", participants: ["duongtang", "phatto"], topicTitle: "Caption" });
+    expect(syncedCount(hub)).toBe(8);
+    expect(unsyncedAgents(hub)).toEqual([]);
+    expect(hub.agentIds).not.toContain("sasuke");
   });
 
   it("scripts a conversation led by the owner", () => {

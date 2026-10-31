@@ -119,7 +119,7 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, t }:
                               <b>{nameOf(message.from)}</b>
                               <em>{t("hub.kind." + message.kind)}</em>
                             </div>
-                            <p>{t(message.textKey)}</p>
+                            <p>{message.text ?? t(message.textKey ?? "")}</p>
                           </div>
                         </li>
                       );

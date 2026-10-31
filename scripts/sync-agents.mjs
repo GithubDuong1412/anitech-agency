@@ -24,6 +24,7 @@ export const TEAM_RULE = "00-anitech-team";
 export function defaultPaths(root = ROOT) {
   return {
     rosterPath: path.join(root, "agents", "roster.json"),
+    rosterSocialPath: path.join(root, "agents", "roster-social.json"),
     personasDir: path.join(root, "agents", "personas"),
     vendorDir: path.join(root, "vendor", "agency-agents"),
     outDir: path.join(root, ".cursor", "rules"),
@@ -107,64 +108,112 @@ function memberRule(member, persona, skills) {
   return mdc({ description, alwaysApply: false, body: sections.join("\n\n") });
 }
 
-function teamRule(roster, skillsById) {
-  const ceo = roster.find((member) => member.role === "ceo") ?? roster[0];
-  const reviewer = roster.find((member) => member.role === "reality");
-  const rows = roster.map((member) => {
+const DUTIES = {
+  it: { lead: "ceo", gate: "reality", fallback: "senior", testing: "testing", security: "security" },
+  social: { lead: "socialCeo", gate: "director", fallback: "copy" },
+};
+
+function byRole(roster, role) {
+  return role ? roster.find((member) => member.role === role) : undefined;
+}
+
+function departmentBlock(dept, skillsById) {
+  const duty = DUTIES[dept.id] ?? DUTIES.it;
+  const lead = byRole(dept.roster, duty.lead) ?? dept.roster[0];
+  const gate = byRole(dept.roster, duty.gate);
+  const fallback = byRole(dept.roster, duty.fallback);
+  const tester = byRole(dept.roster, duty.testing) ?? gate;
+  const rows = dept.roster.map((member) => {
     const skills = skillsById.get(member.id).map((skill) => skill.name).join(" + ");
     return `| ${member.name} | ${member.title} | \`@${member.rule}\` | ${skills} |`;
   });
-  const routing = roster
+  const routing = dept.roster
     .filter((member) => member.keywords?.length)
     .map((member) => `- **${member.name}**: ${member.keywords.join(", ")}`);
-  const body = [
-    "# Đội Anitech Agency",
+  const reviewStep = tester && gate && tester.id !== gate.id
+    ? `4. Mỗi task đi theo vòng: người làm → ${tester.name} kiểm thử → (FAIL thì trả lại người làm) → PASS mới sang task kế.\n5. Khi mọi task PASS, ${gate.name} làm cổng cuối. Mặc định "NEEDS WORK" cho tới khi có bằng chứng.`
+    : `4. Mỗi task đi theo vòng: người làm → ${gate?.name ?? "người duyệt"} duyệt chất lượng nội dung → (FAIL thì trả lại người làm) → PASS mới sang task kế.\n5. ${gate?.name ?? "Người duyệt"} là cổng cuối. Mặc định "NEEDS WORK" cho tới khi có bằng chứng (caption, prompt, hoặc cấu trúc ảnh).`;
+  const lines = [
+    `## ${dept.label}`,
     "",
-    `Project này có một đội agent mang tên nhân vật. Mỗi thành viên là một file rule riêng trong \`.cursor/rules/\`. Người dùng gọi thành viên bằng \`@<tên-rule>\` trong chat. Khi một thành viên được gọi, hãy trả lời đúng vai nhân vật đó, bằng tiếng Việt.`,
-    "",
-    "## Thành viên",
+    "### Thành viên",
     "",
     "| Nhân vật | Chức vụ | Gọi bằng | Kỹ năng nền |",
     "|---|---|---|---|",
     ...rows,
     "",
-    "## Quy trình CEO giao việc",
+    `### Quy trình ${lead.name} giao việc`,
     "",
-    `Với yêu cầu lớn hoặc chưa rõ ai nên làm, người dùng gọi \`@${ceo.rule}\` (${ceo.name}). ${ceo.name} làm theo các bước:`,
+    `Với yêu cầu lớn hoặc chưa rõ ai nên làm, người dùng gọi \`@${lead.rule}\` (${lead.name}). ${lead.name} làm theo các bước:`,
     "",
     "1. Hiểu yêu cầu, hỏi lại nếu thiếu thông tin quan trọng.",
     "2. Chọn một người chịu trách nhiệm chính (và tối đa hai người hỗ trợ), nói rõ lý do.",
     "3. Viết brief cho từng người: mục tiêu, phạm vi, điều kiện hoàn thành.",
-    `4. Mỗi task đi theo vòng: người làm → ${roster.find((m) => m.role === "testing")?.name ?? "kiểm thử"} kiểm thử → (FAIL thì trả lại người làm) → PASS mới sang task kế.`,
-    `5. Khi mọi task PASS, ${reviewer?.name ?? "người kiểm chứng"} làm cổng cuối. Mặc định "NEEDS WORK" cho tới khi có bằng chứng.`,
+    reviewStep,
     "6. Báo cáo lại người dùng: đã làm gì, bằng chứng, rủi ro còn lại, việc cần họ quyết.",
     "",
-    "## Gợi ý định tuyến theo từ khóa",
+    "### Gợi ý định tuyến theo từ khóa",
     "",
     ...routing,
-    `- Không khớp từ khóa nào: giao cho ${roster.find((m) => m.role === "senior")?.name ?? "senior developer"}.`,
+    `- Không khớp từ khóa nào: giao cho ${fallback?.name ?? lead.name}.`,
+  ];
+  if (dept.id === "social") {
+    lines.push(
+      "",
+      "Các agent short-video (`marketing/marketing-tiktok-strategist.md`, `marketing/marketing-short-video-editing-coach.md`) đang ở kho. Chỉ nhắc tới chúng khi người dùng yêu cầu mở Reels hoặc TikTok.",
+    );
+  }
+  return lines.join("\n");
+}
+
+function teamRule(departments, skillsById) {
+  const security = departments.flatMap((dept) => dept.roster).find((member) => member.role === "security");
+  const body = [
+    "# Đội Anitech Agency",
+    "",
+    "Project này có hai phòng ban. Mỗi thành viên là một file rule riêng trong `.cursor/rules/`. Người dùng gọi thành viên bằng `@<tên-rule>` trong chat. Khi một thành viên được gọi, hãy trả lời đúng vai nhân vật đó, bằng tiếng Việt.",
+    "",
+    ...departments.map((dept) => departmentBlock(dept, skillsById)),
     "",
     "## Quy tắc chung",
     "",
     "- Không commit, push hay deploy khi người dùng chưa yêu cầu rõ.",
     "- Không có bằng chứng thì không coi là xong.",
-    `- Việc đụng tới đăng nhập, phân quyền, dữ liệu nhạy cảm phải có ${roster.find((m) => m.role === "security")?.name ?? "người phụ trách bảo mật"} xem trước khi kiểm thử.`,
-    "- Các file trong `.cursor/rules/` do `npm run sync:agents` sinh ra. Muốn đổi nội dung, sửa `agents/roster.json` hoặc `agents/personas/<id>.md` rồi chạy lại.",
+    `- Việc đụng tới đăng nhập, phân quyền, dữ liệu nhạy cảm phải có ${security?.name ?? "người phụ trách bảo mật"} xem trước khi kiểm thử.`,
+    "- Các file trong `.cursor/rules/` do `npm run sync:agents` sinh ra. Muốn đổi nội dung, sửa `agents/roster.json`, `agents/roster-social.json` hoặc `agents/personas/<id>.md` rồi chạy lại.",
   ].join("\n");
   return mdc({
-    description: "Danh sách đội Anitech Agency, cách @mention từng nhân vật và quy trình CEO giao việc",
+    description: "Danh sách đội Anitech Agency, cách @mention từng nhân vật và quy trình trưởng phòng giao việc",
     alwaysApply: true,
     body,
   });
 }
 
+function loadDepartments(options) {
+  const departments = [{ id: "it", label: "IT Research", roster: readRoster(options.rosterPath) }];
+  if (options.rosterSocialPath && fs.existsSync(options.rosterSocialPath)) {
+    departments.push({ id: "social", label: "Social Marketing", roster: readRoster(options.rosterSocialPath) });
+  }
+  const seen = { id: new Set(), rule: new Set() };
+  for (const dept of departments) {
+    for (const member of dept.roster) {
+      for (const key of ["id", "rule"]) {
+        if (seen[key].has(member[key])) throw new Error(`roster: duplicate ${key} "${member[key]}" across departments`);
+        seen[key].add(member[key]);
+      }
+    }
+  }
+  return departments;
+}
+
 /**
- * @param {{rosterPath:string, personasDir:string, vendorDir:string, outDir:string, upstreamDir?:string|null}} options
+ * @param {{rosterPath:string, rosterSocialPath?:string|null, personasDir:string, vendorDir:string, outDir:string, upstreamDir?:string|null}} options
  * @returns {{files:string[], copied:string[], usedUpstream:boolean}}
  */
 export function syncAgents(options) {
-  const { rosterPath, personasDir, vendorDir, outDir, upstreamDir } = options;
-  const roster = readRoster(rosterPath);
+  const { personasDir, vendorDir, outDir, upstreamDir } = options;
+  const departments = loadDepartments(options);
+  const roster = departments.flatMap((dept) => dept.roster);
 
   const usedUpstream = Boolean(upstreamDir) && fs.existsSync(upstreamDir);
   const copied = usedUpstream ? copyUpstream(roster, upstreamDir, vendorDir) : [];
@@ -178,7 +227,7 @@ export function syncAgents(options) {
     files.push(name + ".mdc");
   };
 
-  write(TEAM_RULE, teamRule(roster, skillsById));
+  write(TEAM_RULE, teamRule(departments, skillsById));
   for (const member of roster) {
     const personaPath = path.join(personasDir, member.id + ".md");
     if (!fs.existsSync(personaPath)) throw new Error(`Missing persona: ${personaPath}`);
