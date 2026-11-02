@@ -2,6 +2,7 @@ import { openStore } from "@/server/db";
 import { department } from "@/server/security";
 
 export const dynamic = "force-dynamic";
+// State is read from MySQL on every request. A failed schema check must not hide saved tasks.
 export const runtime = "nodejs";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {

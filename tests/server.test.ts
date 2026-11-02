@@ -4,12 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { IT, SOCIAL } from "@/lib/roster";
+import { openThread, postMessage } from "@/lib/hub";
 import type { RunEvent } from "@/lib/state";
+import { DELETE_PHRASE, createTask, liveTasks } from "@/lib/tasks";
 import { dbEngine, mysqlConfig, Store } from "@/server/db";
 import { createLlmClient, llmConfig, type ChatMessage, type LlmClient } from "@/server/llm";
 import { buildSystemPrompt, loadPersona } from "@/server/persona";
-import { parseTurn, runNewTask, runResolve, type RunDeps } from "@/server/orchestrator";
-import { parseNewTask, parseResolve, rateLimited, readJson, resetRateLimits, sameOrigin, tryLock, unlock } from "@/server/security";
+import { canRetry, parseTurn, repeatsThread, runNewTask, runResolve, runRetry, type RunDeps } from "@/server/orchestrator";
+import { parseDelete, parseNewTask, parseResolve, rateLimited, readJson, resetRateLimits, sameOrigin, tryLock, unlock } from "@/server/security";
 
 type Call = { system: string; user: string };
 
@@ -97,6 +99,79 @@ describe("database", () => {
   });
 });
 
+describe("retry and trash", () => {
+  it("continues a failed task on the same thread and does not write a second plan", async () => {
+    const { llm, calls } = fakeLlm();
+    const { deps, store, events } = setup(IT, llm);
+    const task = { ...createTask({ id: "task-retry1", title: "Thiết kế api catalog", ownerId: "sasuke", createdAt: 1 }), status: "failed" as const, progress: 0 };
+    await store.saveTask(task);
+    const previous = await store.hub();
+    let next = openThread(previous, { id: "thread-task-retry1", taskId: task.id, topicTitle: task.title, participants: ["sasuke", "natsu"] });
+    next = postMessage(next, { id: "msg-plan", threadId: "thread-task-retry1", from: "sasuke", kind: "plan", text: "Kế hoạch riêng cho catalog: phân trang, lọc và kiểm tra quyền trước khi trả danh sách.", at: 2 });
+    next = postMessage(next, { id: "msg-natsu", threadId: "thread-task-retry1", from: "natsu", kind: "answer", text: "Lỗ hổng: token chưa có hạn mức và thiếu kiểm tra chữ ký.", at: 3 });
+    next = postMessage(next, { id: "msg-err", threadId: "thread-task-retry1", from: "sasuke", kind: "question", textKey: "hub.msg.llmError", at: 4 });
+    await store.commitHub(previous, next);
+    const before = (await store.tasks()).map((item) => item.id);
+
+    const result = await runRetry(deps, task.id);
+    const after = await store.snapshot();
+    const messages = after.hub.messages.filter((message) => message.threadId === "thread-task-retry1");
+
+    expect(canRetry(task)).toBe(true);
+    expect(result?.id).toBe("task-retry1");
+    expect(after.tasks.map((item) => item.id).sort()).toEqual([...before].sort());
+    expect(messages.filter((message) => message.kind === "plan")).toHaveLength(1);
+    expect(messages.some((message) => message.textKey === "hub.msg.llmError")).toBe(false);
+    expect(messages.filter((message) => message.from === "natsu")).toHaveLength(1);
+    expect(after.tasks.find((item) => item.id === "task-retry1")?.status).toBe("review");
+    expect(calls.map((call) => /\(id: ([a-z]+)\)/.exec(call.system)?.[1])).toEqual(["sasuke", IT.reviewer.id]);
+    expect(calls.some((call) => call.user.includes("Đưa kế hoạch"))).toBe(false);
+    expect(events.some((event) => event.type === "drop" && event.messageIds.includes("msg-err"))).toBe(true);
+    await store.close();
+  });
+
+  it("keeps a deleted task out of the queue until it is restored with the same status", async () => {
+    const store = new Store("it", ":memory:");
+    const original = (await store.tasks()).find((task) => task.id === "task-1");
+    expect(original).toBeDefined();
+    expect(liveTasks(await store.tasks()).map((task) => task.id)).toContain("task-1");
+
+    await store.saveTask({ ...original!, deletedAt: 50 });
+    const trashed = await store.getTask("task-1");
+    expect(trashed?.deletedAt).toBe(50);
+    expect(trashed?.status).toBe(original!.status);
+    expect(canRetry({ ...trashed!, status: "failed" })).toBe(false);
+    expect(liveTasks(await store.tasks()).map((task) => task.id)).not.toContain("task-1");
+    expect((await store.tasks()).map((task) => task.id)).toContain("task-1");
+
+    await store.saveTask({ ...trashed!, deletedAt: undefined });
+    const restored = await store.getTask("task-1");
+    expect(restored?.deletedAt).toBeUndefined();
+    expect(restored?.status).toBe(original!.status);
+    expect(liveTasks(await store.tasks()).map((task) => task.id)).toContain("task-1");
+    await store.close();
+  });
+
+  it("erases a trashed task and its conversation, and leaves a live task alone", async () => {
+    const store = new Store("it", ":memory:");
+    const original = (await store.tasks()).find((task) => task.id === "task-1");
+    await store.saveTask({ ...original!, deletedAt: 50 });
+
+    expect(await store.purgeTask("task-2")).toBe(false);
+    expect(await store.getTask("task-2")).toBeDefined();
+    expect((await store.hub()).threads.some((thread) => thread.taskId === "task-2")).toBe(true);
+
+    expect(await store.purgeTask("task-1")).toBe(true);
+    expect(await store.getTask("task-1")).toBeUndefined();
+    const hub = await store.hub();
+    expect(hub.threads.some((thread) => thread.taskId === "task-1" || thread.id === "thread-task-1")).toBe(false);
+    expect(hub.messages.some((message) => message.threadId === "thread-task-1")).toBe(false);
+    expect(hub.threads.some((thread) => thread.taskId === "task-2")).toBe(true);
+    expect(hub.messages.some((message) => message.threadId === "thread-task-2")).toBe(true);
+    await store.close();
+  });
+});
+
 describe("agents with a model", () => {
   it("each agent speaks with its own rules and the task stays out of the system prompt", async () => {
     const { llm, calls } = fakeLlm();
@@ -116,10 +191,32 @@ describe("agents with a model", () => {
 
   it("agents see what teammates already said", async () => {
     const { llm, calls } = fakeLlm();
-    const { deps } = setup(IT, llm);
+    const { deps, store } = setup(IT, llm);
     await runNewTask(deps, { title: "Viết api", ownerId: "sasuke", areas: ["sasuke", "natsu"] });
     const natsuCall = calls.find((call) => call.system.includes("(id: natsu)"))!;
     expect(natsuCall.user).toContain("Trả lời từ sasuke");
+    expect(natsuCall.user).toContain("Không sao chép");
+    expect(natsuCall.system).toContain("lỗ hổng");
+    const hub = await store.hub();
+    const thread = hub.threads.at(-1)!;
+    expect(hub.messages.filter((message) => message.threadId === thread.id).at(-1)!.kind).toBe("review");
+  });
+
+  it("asks a teammate once more when they copy a sentence already in the thread", async () => {
+    const calls: Call[] = [];
+    const llm: LlmClient = {
+      async complete(messages) {
+        calls.push({ system: messages.find((item) => item.role === "system")?.content ?? "", user: messages.find((item) => item.role === "user")?.content ?? "" });
+        return JSON.stringify({ kind: "plan", text: "Sử dụng JWT để đăng nhập và trả về token qua POST /api/login cho người dùng.", ask: [] });
+      },
+    };
+    const { deps } = setup(IT, llm);
+    await runNewTask(deps, { title: "Thiết kế API đăng nhập JWT", ownerId: "sasuke", areas: ["sasuke", "natsu"] });
+    const natsuCalls = calls.filter((call) => call.system.includes("(id: natsu)"));
+    expect(natsuCalls).toHaveLength(2);
+    expect(natsuCalls[1].user).toContain("trùng với thread");
+    expect(repeatsThread("Sử dụng JWT để đăng nhập và trả về token qua POST /api/login cho người dùng.", ["Sử dụng JWT để đăng nhập và trả về token qua POST /api/login."])).toBe(true);
+    expect(repeatsThread("Thiếu kiểm tra hạn token.", ["Sử dụng JWT để đăng nhập và trả về token."])).toBe(false);
   });
 
   it("caps the conversation even when every agent keeps asking for more", async () => {
@@ -228,6 +325,8 @@ describe("llm client", () => {
   it("is off without a key and reads settings from the environment", () => {
     expect(llmConfig({})).toBeNull();
     expect(llmConfig({ LLM_API_KEY: " k ", LLM_BASE_URL: "http://x/v1/", LLM_MODEL: "z", LLM_JSON_MODE: "false" })).toMatchObject({ apiKey: "k", baseUrl: "http://x/v1", model: "z", jsonMode: false, timeoutMs: 45_000, maxTurns: 8 });
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_MODEL: "qwen2.5-coder-14b", LLM_DEPARTMENTS: "it" }, "it")?.model).toBe("qwen2.5-coder-14b");
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_DEPARTMENTS: "it" }, "social")).toBeNull();
   });
 
   it("retries once without json mode when the provider rejects it, and never leaks the key in errors", async () => {
@@ -294,6 +393,11 @@ describe("request security", () => {
     expect(parseNewTask({ title: "x", ownerId: "sasuke", locale: "xx" }, IT)?.locale).toBe("vi");
     expect(parseResolve({ action: "delete" })).toBeUndefined();
     expect(parseResolve({ action: "changes", note: "y".repeat(900) })?.note).toHaveLength(500);
+    expect(parseDelete({ confirm: "delete" })).toBe(false);
+    expect(parseDelete({ confirm: "Delete task" })).toBe(false);
+    expect(parseDelete({ confirm: "delete  task" })).toBe(false);
+    expect(parseDelete({})).toBe(false);
+    expect(parseDelete({ confirm: DELETE_PHRASE })).toBe(true);
   });
 
   it("never reads a persona file outside .cursor/rules", () => {

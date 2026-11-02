@@ -25,6 +25,8 @@ public/characters/<id>/     avatar.png, sprite.png
 public/maps/                temple.png, center.png
 src/                        dashboard (Next.js, Tailwind v4)
 tests/                      Vitest
+run_agency.py               tranh luận Sasuke/Natsu qua LM Studio (AutoGen)
+requirements.txt            dependency Python cho run_agency.py
 ```
 
 ## Sử dụng
@@ -52,8 +54,31 @@ npm run build
 
 ## Dashboard
 
-Dashboard là **bản mô phỏng**: hub, hội thoại giữa các agent và luồng duyệt việc chạy trên dữ liệu giả. Chỉ dùng Cursor thì không có LLM runtime để gọi. Mọi thông tin nhân vật (tên, màu, ảnh, vị trí trên bản đồ, từ khóa định tuyến) đều đọc từ `agents/roster.json` qua `src/lib/roster.ts`.
+Dashboard là **bản mô phỏng**: hub, hội thoại giữa các agent và luồng duyệt việc chạy trên dữ liệu giả. Muốn Sasuke và Natsu tranh luận bằng model local, xem mục [Tranh luận local](#tranh-luận-local-lm-studio). Mọi thông tin nhân vật (tên, màu, ảnh, vị trí trên bản đồ, từ khóa định tuyến) đều đọc từ `agents/roster.json` qua `src/lib/roster.ts`.
 
 - `src/lib/routing.ts`: gợi ý người phụ trách (`recommendAgent`) và người liên quan (`relevantAgents`) từ từ khóa trong roster. Từ khóa khớp ở đầu từ; người nhiều từ khóa khớp nhất thắng, hòa thì theo thứ tự trong roster; không khớp thì giao cho Senior Developer.
 - `src/lib/tasks.ts`, `src/lib/hub.ts`: vòng đời task và hub mô phỏng.
 - `src/i18n`: 5 ngôn ngữ (vi, en, es, fr, zh-CN).
+
+## Tranh luận local (LM Studio)
+
+`run_agency.py` là runtime riêng, không gắn vào dashboard. Sasuke (Backend) và Natsu (AppSec) tranh luận tối đa 6 lượt qua LM Studio. System prompt của mỗi người là persona trong `agents/personas/` cộng file kỹ năng trong `vendor/agency-agents/`.
+
+1. Mở LM Studio, load model, bật local server cổng **1234**. Context nên khoảng **16384** vì prompt gồm cả file kỹ năng.
+2. Tạo môi trường và cài thư viện (một lần):
+
+```bash
+python -m venv venv
+source venv/Scripts/activate   # Git Bash
+# PowerShell: .\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+3. Chạy. Không truyền đối số thì đề tài mặc định là thiết kế JWT:
+
+```bash
+python run_agency.py
+python run_agency.py "đề tài khác"
+```
+
+Model mặc định là `qwen2.5-coder-14b`, đúng model đang load trong LM Studio. Đổi model hoặc URL bằng `LMSTUDIO_MODEL` và `LMSTUDIO_BASE_URL`. Sơ đồ IT trên dashboard dùng cùng model qua `LLM_MODEL` và `LLM_DEPARTMENTS=it` trong `.env.local`.

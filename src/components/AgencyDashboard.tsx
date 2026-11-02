@@ -4,7 +4,7 @@ import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, m } from "moti
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { type AgentId, type Department, type DepartmentId, DEPARTMENT_IDS, IT, SOCIAL, avatarStyle, getAgent, getDepartment } from "@/lib/roster";
 import { matchedAreas, ownerCandidates } from "@/lib/routing";
-import { type Task, type TaskStatus } from "@/lib/tasks";
+import { DELETE_PHRASE, type Task, type TaskStatus, liveTasks } from "@/lib/tasks";
 import { isLocale, Locale, localeOptions, translate } from "@/i18n";
 
 import { type HubState, applyRemote } from "@/lib/hub";
@@ -25,6 +25,7 @@ type DeptRuntime = {
   ownerTouched: boolean;
   ownerChoice: AgentId;
   talkingIds: AgentId[];
+  thinkingIds: AgentId[];
   syncPulse: number;
 };
 
@@ -40,6 +41,7 @@ function seedRuntime(department: Department): DeptRuntime {
     ownerTouched: false,
     ownerChoice: department.fallback.id,
     talkingIds: [],
+    thinkingIds: [],
     syncPulse: 0,
   };
 }
@@ -54,8 +56,9 @@ function agentStatus(agentId: AgentId, tasks: Task[]): "ready" | TaskStatus {
 }
 
 function statusesFor(department: Department, tasks: Task[]) {
+  const live = liveTasks(tasks);
   const next: Record<AgentId, "ready" | TaskStatus> = {};
-  for (const agent of department.agents) next[agent.id] = agentStatus(agent.id, tasks);
+  for (const agent of department.agents) next[agent.id] = agentStatus(agent.id, live);
   return next;
 }
 
@@ -86,8 +89,13 @@ export default function AgencyDashboard() {
   const [hubTaskId, setHubTaskId] = useState<string | null>(null);
   const [rosterOpen, setRosterOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [rail, setRail] = useState<"queue" | "trash">("queue");
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [deleteMode, setDeleteMode] = useState<"soft" | "purge">("soft");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [mapExpanded, setMapExpanded] = useState(false);
-  const [model, setModel] = useState<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite" } | null>(null);
+  const [model, setModel] = useState<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite"; departments?: Record<string, { llm: boolean; model: string | null }> } | null>(null);
   const [running, setRunning] = useState<Record<DepartmentId, boolean>>({ it: false, social: false });
   const [zoomByDept, setZoomByDept] = useState<Record<DepartmentId, number>>({ it: 1, social: 1 });
   const itZoomRef = useRef<MapZoomApi | null>(null);
@@ -95,11 +103,15 @@ export default function AgencyDashboard() {
   const talkTimers = useRef<Partial<Record<DepartmentId, number>>>({});
   const dialogRef = useRef<HTMLDialogElement>(null);
   const profileDialogRef = useRef<HTMLDialogElement>(null);
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const timeoutRef = useRef<number[]>([]);
 
   const department = getDepartment(workspace);
+  const liveModel = model?.departments?.[workspace] ?? (model ? { llm: model.llm, model: model.model } : null);
   const snap = runtime[workspace];
-  const { tasks, activities, hub, selectedAgentId, filter, talkingIds } = snap;
+  const { tasks: storedTasks, hub, selectedAgentId, filter, talkingIds, thinkingIds } = snap;
+  const queueTasks = liveTasks(storedTasks);
+  const trashTasks = storedTasks.filter((task) => task.deletedAt != null);
   const agents = department.agents;
   const ceo = department.ceo;
   const fallback = department.fallback;
@@ -119,12 +131,12 @@ export default function AgencyDashboard() {
     ? snap.ownerChoice
     : candidates[0]?.id ?? fallback.id;
   const teammates = areas.filter((id) => id !== ownerChoice && id !== ceo.id);
-  const statuses = statusesFor(department, tasks);
-  const activeCount = tasks.filter((task) => task.status === "active").length;
-  const reviewCount = tasks.filter((task) => task.status === "review").length;
-  const reviewCountFor = (id: DepartmentId) => runtime[id].tasks.filter((task) => task.status === "review").length;
+  const statuses = statusesFor(department, storedTasks);
+  const activeCount = queueTasks.filter((task) => task.status === "active").length;
+  const reviewCount = queueTasks.filter((task) => task.status === "review").length;
+  const reviewCountFor = (id: DepartmentId) => liveTasks(runtime[id].tasks).filter((task) => task.status === "review").length;
   const pendingTotal = DEPARTMENT_IDS.reduce((sum, id) => sum + reviewCountFor(id), 0);
-  const visibleTasks = tasks.filter((task) => filter === "all" || task.status === filter);
+  const visibleTasks = queueTasks.filter((task) => filter === "all" || task.status === filter);
   const mapZoom = zoomByDept[workspace];
   const activeZoomRef = workspace === "it" ? itZoomRef : socialZoomRef;
   const handleAgentOpen = useCallback((deptId: DepartmentId, agentId: AgentId) => {
@@ -163,7 +175,7 @@ export default function AgencyDashboard() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mapExpanded]);
 
-  const pageLocked = hubOpen || taskDialogOpen || profileAgentId !== null;
+  const pageLocked = hubOpen || taskDialogOpen || profileAgentId !== null || deleteTaskId !== null;
 
   useEffect(() => {
     if (!pageLocked) return;
@@ -202,6 +214,16 @@ export default function AgencyDashboard() {
     if (!profileAgentId && dialog.open) dialog.close();
   }, [profileAgentId]);
 
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (deleteTaskId && !dialog.open) {
+      dialog.showModal();
+      dialog.querySelector<HTMLInputElement>("input")?.focus();
+    }
+    if (!deleteTaskId && dialog.open) dialog.close();
+  }, [deleteTaskId]);
+
   function assignToProfileAgent() {
     if (!profileAgentId) return;
     const dept = departmentOf(profileAgentId);
@@ -226,25 +248,40 @@ export default function AgencyDashboard() {
     timeoutRef.current.push(timer);
   }
 
-  /** Light up the speakers on the map for a moment and flash the hub pulse. */
-  function flash(deptId: DepartmentId, talking: AgentId[]) {
-    patch(deptId, (current) => ({ ...current, talkingIds: talking, syncPulse: current.syncPulse + 1 }));
+  /**
+   * Light up who is speaking. While an agent is still thinking, the light stays on.
+   * After the answer arrives it lingers briefly, then goes out.
+   */
+  function lightSpeakers(deptId: DepartmentId, talking: AgentId[], linger: boolean) {
+    patch(deptId, (current) => ({
+      ...current,
+      talkingIds: talking,
+      syncPulse: talking.length > 0 ? current.syncPulse + 1 : current.syncPulse,
+    }));
     const previous = talkTimers.current[deptId];
     if (previous !== undefined) window.clearTimeout(previous);
+    delete talkTimers.current[deptId];
+    if (!linger || talking.length === 0) return;
     talkTimers.current[deptId] = window.setTimeout(() => {
       patch(deptId, (current) => ({ ...current, talkingIds: [] }));
+      delete talkTimers.current[deptId];
     }, 2200);
   }
 
   /** Apply one thing the server just saved. The database is the source of truth; this only mirrors it as it streams in. */
   function applyEvent(deptId: DepartmentId, event: RunEvent) {
     if (event.type === "typing") {
-      flash(deptId, [event.agentId]);
+      patch(deptId, (current) => ({ ...current, thinkingIds: [event.agentId] }));
+      lightSpeakers(deptId, [event.agentId], false);
     } else if (event.type === "thread") {
       patch(deptId, (current) => ({ ...current, hub: applyRemote(current.hub, { thread: event.thread }) }));
     } else if (event.type === "message") {
-      patch(deptId, (current) => ({ ...current, hub: applyRemote(current.hub, { thread: event.thread, message: event.message }) }));
-      flash(deptId, [event.message.from]);
+      patch(deptId, (current) => ({
+        ...current,
+        thinkingIds: current.thinkingIds.filter((id) => id !== event.message.from),
+        hub: applyRemote(current.hub, { thread: event.thread, message: event.message }),
+      }));
+      lightSpeakers(deptId, [event.message.from], true);
     } else if (event.type === "task") {
       patch(deptId, (current) => ({
         ...current,
@@ -254,8 +291,19 @@ export default function AgencyDashboard() {
       }));
     } else if (event.type === "activity") {
       patch(deptId, (current) => ({ ...current, activities: [event.activity, ...current.activities].slice(0, 6) }));
+    } else if (event.type === "drop") {
+      const ids = new Set(event.messageIds);
+      patch(deptId, (current) => ({
+        ...current,
+        hub: { ...current.hub, messages: current.hub.messages.filter((message) => !ids.has(message.id)) },
+      }));
     } else if (event.type === "error") {
+      patch(deptId, (current) => ({ ...current, thinkingIds: [] }));
+      lightSpeakers(deptId, [], false);
       announce(t("messages.agentError"));
+    } else if (event.type === "done") {
+      patch(deptId, (current) => ({ ...current, thinkingIds: [] }));
+      lightSpeakers(deptId, [], false);
     }
   }
 
@@ -274,7 +322,7 @@ export default function AgencyDashboard() {
     const frame = window.requestAnimationFrame(() => {
       for (const id of DEPARTMENT_IDS) void loadState(id);
       fetch("/api/health", { cache: "no-store" })
-        .then((response) => response.json() as Promise<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite" }>)
+        .then((response) => response.json() as Promise<{ llm: boolean; model: string | null; mode?: "ai" | "demo"; db?: "mysql" | "sqlite"; departments?: Record<string, { llm: boolean; model: string | null }> }>)
         .then((data) => setModel(data))
         .catch(() => setModel(null));
     });
@@ -342,6 +390,7 @@ export default function AgencyDashboard() {
     }));
     setTaskDialogOpen(false);
     setTaskTitle("");
+    setRail("queue");
     announce(t("messages.taskCreated"));
     void runStream(deptId, post(`/api/departments/${deptId}/tasks`, "POST", { title, ownerId, areas, locale }));
   }
@@ -354,6 +403,58 @@ export default function AgencyDashboard() {
     void runStream(deptId, post(`/api/departments/${deptId}/tasks/${task.id}`, "PATCH", { action: approve ? "approve" : "changes", locale }));
   }
 
+  function retryTask(task: Task) {
+    if (running[workspace] || task.status !== "failed" || task.deletedAt) return;
+    void runStream(workspace, post(`/api/departments/${workspace}/tasks/${task.id}/retry`, "POST", { locale }));
+  }
+
+  function askDelete(task: Task) {
+    if (running[workspace] || task.deletedAt) return;
+    setDeleteConfirm("");
+    setDeleteMode("soft");
+    setDeleteTaskId(task.id);
+  }
+
+  function askPurge(task: Task) {
+    if (running[workspace] || !task.deletedAt) return;
+    setDeleteConfirm("");
+    setDeleteMode("purge");
+    setDeleteTaskId(task.id);
+  }
+
+  async function confirmDelete(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!deleteTaskId || deleteConfirm !== DELETE_PHRASE || running[workspace]) return;
+    const deptId = workspace;
+    const taskId = deleteTaskId;
+    const path = deleteMode === "purge" ? "purge" : "delete";
+    const response = await post(`/api/departments/${deptId}/tasks/${taskId}/${path}`, "POST", { confirm: deleteConfirm });
+    if (!response.ok) {
+      announce(t(response.status === 409 ? "messages.agentBusy" : response.status === 429 ? "messages.agentRateLimited" : "messages.deleteRejected"));
+      return;
+    }
+    setDeleteTaskId(null);
+    setDeleteConfirm("");
+    setDeleteMode("soft");
+    if (hubTaskId === taskId) {
+      setHubOpen(false);
+      setHubTaskId(null);
+    }
+    announce(t(deleteMode === "purge" ? "messages.taskPurged" : "messages.taskDeleted"));
+    await loadState(deptId);
+  }
+
+  async function restoreTask(task: Task) {
+    if (running[workspace] || !task.deletedAt) return;
+    const response = await post(`/api/departments/${workspace}/tasks/${task.id}/restore`, "POST", {});
+    if (!response.ok) {
+      announce(t(response.status === 409 ? "messages.agentBusy" : response.status === 429 ? "messages.agentRateLimited" : "messages.agentError"));
+      return;
+    }
+    announce(t("messages.taskRestored"));
+    await loadState(workspace);
+  }
+
 
   function openApprovalQueue() {
     if (reviewCount === 0) {
@@ -361,6 +462,7 @@ export default function AgencyDashboard() {
       return;
     }
     patch(workspace, (current) => ({ ...current, filter: "review" }));
+    setRail("queue");
     document.getElementById("work-queue")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
   }
 
@@ -390,23 +492,12 @@ export default function AgencyDashboard() {
     return withOwner.length > 0 ? `${owner} | ${withOwner.join(", ")}` : owner;
   }
 
-  const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) ?? ceo;
   const profileAgent = profileAgentId ? getAgent(profileAgentId) ?? null : null;
   const profileDepartment = profileAgent ? departmentOf(profileAgent.id) : department;
   const profileStatus = profileAgent ? statusesFor(profileDepartment, runtime[profileDepartment.id].tasks)[profileAgent.id] : "ready";
   const profileStatusText = profileStatus === "ready" || profileStatus === "complete" ? t("roster.statusReady") : profileStatus === "failed" ? t("taskStatus.failed") : profileStatus === "active" ? t("roster.statusWorking") : t("roster.statusReview");
-  const profileTasks = profileAgent ? runtime[profileDepartment.id].tasks.filter((task) => task.ownerId === profileAgent.id) : [];
-
-  const agentLabel = (id?: AgentId) => (id ? getAgent(id)?.name : undefined);
-
-  function renderActivity(entry: ActivityRecord) {
-    if (entry.type === "seed" && entry.messageKey) return t(entry.messageKey);
-    if (entry.type === "assigned") return <>{t("activity.assigned")} <b>{agentLabel(entry.agentId)}</b></>;
-    if (entry.type === "arrived") return <><b>{agentLabel(entry.agentId)}</b> {t("activity.arrived")}</>;
-    if (entry.type === "submitted") return <><b>{agentLabel(entry.agentId)}</b> {t("activity.submitted")}</>;
-    if (entry.type === "approved") return <><b>{agentLabel(entry.agentId)}</b> · {t("tasks.approve")}</>;
-    return <><b>{agentLabel(entry.agentId)}</b> · {t("tasks.requestChanges")}</>;
-  }
+  const profileTasks = profileAgent ? liveTasks(runtime[profileDepartment.id].tasks).filter((task) => task.ownerId === profileAgent.id) : [];
+  const focusedTask = hubTaskId ? storedTasks.find((task) => task.id === hubTaskId) ?? null : null;
 
   return (
     <MotionConfig reducedMotion="user"><LazyMotion features={domAnimation} strict><div className="app-shell">
@@ -435,13 +526,27 @@ export default function AgencyDashboard() {
             </div>}
           </div>
           <div className={"nav-group" + (queueOpen ? " is-open" : "")}>
-            <button type="button" className={"nav-item" + (queueOpen ? " is-open" : "")} aria-expanded={queueOpen} onClick={() => setQueueOpen((value) => !value)}>
-              <span className="nav-icon" aria-hidden="true">▤</span><span>{t("navigation.workQueue")}</span><span className="nav-caret" aria-hidden="true" /><span className="nav-count">{String(tasks.length).padStart(2, "0")}</span>
+            <button type="button" className={"nav-item" + (queueOpen ? " is-open" : "")} aria-expanded={queueOpen} onClick={() => { setRail("queue"); setQueueOpen((value) => !value); }}>
+              <span className="nav-icon" aria-hidden="true">▤</span><span>{t("navigation.workQueue")}</span><span className="nav-caret" aria-hidden="true" /><span className="nav-count">{String(queueTasks.length).padStart(2, "0")}</span>
             </button>
             {queueOpen && <div className="nav-sub nav-tasks" aria-label={t("navigation.workQueue")}>
-              {tasks.length === 0 && <p className="nav-task-empty">{t("queue.empty")}</p>}
-              {[...tasks].reverse().map((task) => (
+              {queueTasks.length === 0 && <p className="nav-task-empty">{t("queue.empty")}</p>}
+              {[...queueTasks].reverse().map((task) => (
                 <button type="button" key={task.id} className="nav-task" onClick={() => openHub(task.id)}>
+                  <strong>{taskTitleOf(task)}</strong>
+                  <small><em className={task.status}>{t("taskStatus." + task.status)}</em>{taskCrew(task)}</small>
+                </button>
+              ))}
+            </div>}
+          </div>
+          <div className={"nav-group" + (trashOpen ? " is-open" : "")}>
+            <button type="button" className={"nav-item" + (trashOpen ? " is-open" : "")} aria-expanded={trashOpen} onClick={() => { setRail("trash"); setTrashOpen((value) => !value); document.getElementById("work-queue")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" }); }}>
+              <span className="nav-icon" aria-hidden="true"><svg className="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16" /><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /><path d="M6.5 7l.8 12.2a1 1 0 0 0 1 .8h7.4a1 1 0 0 0 1-.8L17.5 7" /><path d="M10 11v6M14 11v6" /></svg></span><span>{t("navigation.trash")}</span><span className="nav-caret" aria-hidden="true" /><span className="nav-count">{String(trashTasks.length).padStart(2, "0")}</span>
+            </button>
+            {trashOpen && <div className="nav-sub nav-tasks" aria-label={t("navigation.trash")}>
+              {trashTasks.length === 0 && <p className="nav-task-empty">{t("trash.empty")}</p>}
+              {[...trashTasks].reverse().map((task) => (
+                <button type="button" key={task.id} className="nav-task" onClick={() => { setRail("trash"); openHub(task.id); }}>
                   <strong>{taskTitleOf(task)}</strong>
                   <small><em className={task.status}>{t("taskStatus." + task.status)}</em>{taskCrew(task)}</small>
                 </button>
@@ -521,6 +626,7 @@ export default function AgencyDashboard() {
                       selectedAgentId={view.selectedAgentId}
                       onAgentOpen={(agentId) => handleAgentOpen(dept.id, agentId)}
                       talkingIds={view.talkingIds}
+                      thinkingIds={view.thinkingIds}
                       syncPulse={view.syncPulse}
                       onHubOpen={() => openHub()}
                       hubLabel={t("hub.title")}
@@ -559,10 +665,27 @@ export default function AgencyDashboard() {
             </m.section>
 
             <m.section {...rise(1)} className="queue-card @container/queue" id="work-queue" aria-labelledby="queue-title">
+              {rail === "trash" ? <>
+                <div className="section-heading compact-heading"><div><span className="section-kicker">{t("trash.kicker")}</span><h2 id="queue-title">{t("trash.title")}</h2></div></div>
+                <div className="task-list">
+                  {trashTasks.length === 0 && <div className="empty-state">{t("trash.empty")}</div>}
+                  <AnimatePresence initial={false} mode="popLayout">{[...trashTasks].reverse().map((task) => {
+                    const owner = getAgent(task.ownerId);
+                    const taskLabel = task.titleKey === "custom" ? task.title ?? "" : t("tasks." + task.titleKey);
+                    return <m.article layout="position" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.28, ease: EASE }} className={"task-item " + task.status} key={task.id}>
+                      <span className="task-marker" />
+                      <div className="task-copy"><strong>{taskLabel}</strong><small><span className="mini-agent" style={owner ? avatarStyle(owner) : undefined}>{owner?.name.slice(0, 1)}</span>{owner?.name}</small></div>
+                      <span className="task-state @max-[17rem]/queue:max-w-16 @max-[17rem]/queue:text-[0.65rem]">{t("taskStatus." + task.status)}</span>
+                      <div className="task-actions"><button type="button" disabled={running[workspace]} onClick={() => void restoreTask(task)}>{t("trash.restore")}</button></div>
+                    </m.article>;
+                  })}</AnimatePresence>
+                </div>
+                <button className="queue-link" type="button" onClick={() => setRail("queue")}><span>{t("navigation.workQueue")}</span><span aria-hidden="true">→</span></button>
+              </> : <>
               <div className="section-heading compact-heading"><div><span className="section-kicker">{t("queue.kicker")}</span><h2 id="queue-title">{t("queue.title")}</h2></div><button className="small-add" type="button" aria-label={t("dashboard.createTask")} onClick={() => setTaskDialogOpen(true)}>＋</button></div>
               <div className="queue-tabs" role="group" aria-label={t("queue.title")}>
                 {(["all", "active", "review"] as const).map((option) => <button className={"queue-tab" + (filter === option ? " selected" : "")} type="button" key={option} aria-pressed={filter === option} onClick={() => patch(workspace, (current) => ({ ...current, filter: option }))}>
-                  {t("queue." + option)}{option === "all" ? <span>{String(tasks.length).padStart(2, "0")}</span> : option === "review" ? <span>{reviewCount}</span> : <span>{activeCount}</span>}
+                  {t("queue." + option)}{option === "all" ? <span>{String(queueTasks.length).padStart(2, "0")}</span> : option === "review" ? <span>{reviewCount}</span> : <span>{activeCount}</span>}
                 </button>)}
               </div>
               <div className="task-list">
@@ -580,26 +703,12 @@ export default function AgencyDashboard() {
                 })}</AnimatePresence>
               </div>
               <button className="queue-link" type="button" onClick={() => patch(workspace, (current) => ({ ...current, filter: "all" }))}><span>{t("queue.open")}</span><span aria-hidden="true">→</span></button>
+              </>}
             </m.section>
-
-            <m.section {...rise(2)} className="profile-card" aria-labelledby="profile-title">
-              <div className="section-heading compact-heading"><div><span className="section-kicker">{t("roster.team")}</span><h2 id="profile-title">{selectedAgent.name}</h2></div><span className={"profile-status " + statuses[selectedAgent.id]}>{statuses[selectedAgent.id] === "ready" || statuses[selectedAgent.id] === "complete" ? t("roster.statusReady") : statuses[selectedAgent.id] === "failed" ? t("taskStatus.failed") : statuses[selectedAgent.id] === "active" ? t("roster.statusWorking") : t("roster.statusReview")}</span></div>
-              <p className="profile-role">{t("roles." + selectedAgent.role)}</p>
-              <div className="profile-divider" />
-              <div className="profile-detail"><span>{t("roster.focus")}</span><b>{t("focus." + selectedAgent.role)}</b></div>
-              <p className="profile-description">{t("profiles." + selectedAgent.role)}</p>
-            </m.section>
-
-            <m.section {...rise(3)} className="activity-card" aria-labelledby="activity-title">
-              <div className="section-heading compact-heading"><div><span className="section-kicker">{t("activity.kicker")}</span><h2 id="activity-title">{t("activity.title")}</h2></div><span className="activity-live"><i />{t("activity.live")}</span></div>
-              <ol className="activity-list">
-                {activities.map((entry) => <li key={entry.id}><span className="activity-pin" /><div><p>{renderActivity(entry)}</p><time>{t("activity.justNow")}</time></div></li>)}
-              </ol>
-            </m.section>
-            {!model?.llm && <div className="privacy-note"><span aria-hidden="true">◈</span><p>{t("messages.prototype")}</p></div>}
+            {!liveModel?.llm && <div className="privacy-note"><span aria-hidden="true">◈</span><p>{t("messages.prototype")}</p></div>}
           </aside>
         </div>
-        <footer className="app-footer"><span>ANITECH AGENCY / AGENT OPERATIONS</span><span>{model === null ? "" : model.llm ? t("footer.modelLive", { model: model.model ?? "" }) : t("footer.modelDemo")}{model?.db ? ` · ${t("footer.database", { engine: model.db === "mysql" ? "MySQL" : "SQLite" })}` : ""} · BUILD 0.1.0 · PRIVATE PROTOTYPE</span></footer>
+        <footer className="app-footer"><span>ANITECH AGENCY / AGENT OPERATIONS</span><span>{model === null ? "" : liveModel?.llm ? t("footer.modelLive", { model: liveModel.model ?? "" }) : t("footer.modelDemo")}{model?.db ? ` · ${t("footer.database", { engine: model.db === "mysql" ? "MySQL" : "SQLite" })}` : ""} · BUILD 0.1.0 · PRIVATE PROTOTYPE</span></footer>
       </main>
 
       <dialog className="modal task-modal" ref={dialogRef} onClose={() => { setTaskDialogOpen(false); patch(workspace, (current) => ({ ...current, areasTouched: false, ownerTouched: false })); }} aria-labelledby="task-dialog-title">
@@ -676,7 +785,15 @@ export default function AgencyDashboard() {
           </div>
         </div>}
       </dialog>
-      <HubDialog open={hubOpen} taskId={hubTaskId} onClose={() => { setHubOpen(false); setHubTaskId(null); }} hub={hub} agents={agents} talkingIds={talkingIds} t={t} />
+      <HubDialog open={hubOpen} taskId={hubTaskId} task={focusedTask} running={running[workspace]} onRetry={() => focusedTask && retryTask(focusedTask)} onDelete={() => focusedTask && askDelete(focusedTask)} onRestore={() => focusedTask && void restoreTask(focusedTask)} onPurge={() => focusedTask && askPurge(focusedTask)} onClose={() => { setHubOpen(false); setHubTaskId(null); }} hub={hub} agents={agents} talkingIds={talkingIds} thinkingIds={thinkingIds} t={t} />
+      <dialog className="modal task-modal" ref={deleteDialogRef} onClose={() => { setDeleteTaskId(null); setDeleteConfirm(""); setDeleteMode("soft"); }} aria-labelledby="delete-dialog-title">
+        <form onSubmit={(event) => void confirmDelete(event)}>
+          <div className="modal-head"><div><h2 id="delete-dialog-title">{t(deleteMode === "purge" ? "tasks.purgeTitle" : "tasks.deleteTitle")}</h2></div><button className="modal-close" type="button" aria-label={t("tasks.cancel")} onClick={() => setDeleteTaskId(null)}>×</button></div>
+          <label htmlFor="delete-confirm">{t(deleteMode === "purge" ? "tasks.purgeHint" : "tasks.deleteHint")}</label>
+          <input id="delete-confirm" value={deleteConfirm} onChange={(event) => setDeleteConfirm(event.currentTarget.value)} autoComplete="off" spellCheck={false} />
+          <div className="modal-actions"><button className="cancel-button" type="button" onClick={() => setDeleteTaskId(null)}>{t("tasks.cancel")}</button><button className="primary-button danger" type="submit" disabled={deleteConfirm !== DELETE_PHRASE || running[workspace]}>{t(deleteMode === "purge" ? "trash.purge" : "tasks.deleteAction")}</button></div>
+        </form>
+      </dialog>
       <div className="toast" role="status" aria-live="polite">{toast}</div>
     </div>
     </LazyMotion></MotionConfig>

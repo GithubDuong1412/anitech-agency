@@ -14,8 +14,10 @@ type Props = {
   statuses: Record<string, string>;
   selectedAgentId: string;
   onAgentOpen?: (id: Agent["id"]) => void;
-  /** Agents currently talking through the hub. */
+  /** Agents currently talking through the hub. Lights the link, not the name label. */
   talkingIds?: readonly string[];
+  /** Agents whose reply is still being written. */
+  thinkingIds?: readonly string[];
   /** Increments every time the hub syncs; flashes all links once. */
   syncPulse?: number;
   onHubOpen?: () => void;
@@ -51,7 +53,7 @@ const DOT_RADIUS = 4;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3.5;
 
-export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOpen, talkingIds = [], syncPulse = 0, onHubOpen, hubLabel = "Data hub", scene, zoomApiRef, onZoomChange }: Props) {
+export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOpen, talkingIds = [], thinkingIds = [], syncPulse = 0, onHubOpen, hubLabel = "Data hub", scene, zoomApiRef, onZoomChange }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -178,6 +180,7 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
           const accent = agent.color;
           const status = statuses[agent.id] ?? "ready";
           const selected = selectedAgentId === agent.id;
+          const marching = thinkingIds.includes(agent.id);
           return (
             <div key={agent.id} className="temple-anchor-group">
               <button
@@ -194,11 +197,16 @@ export default function TempleMap({ agents, statuses, selectedAgentId, onAgentOp
             <div className="temple-anchor" style={{ left: pos.x + "%", top: pos.y + "%", transform: `translate(-50%, ${fixed ? "-50%" : "-100%"}) scale(${1 / zoom})` }}>
               <button
                 type="button"
-                className={"temple-label" + (selected ? " is-selected" : "")}
+                className={"temple-label" + (selected ? " is-selected" : "") + (marching ? " is-working" : "")}
                 style={{ ["--accent" as string]: accent }}
                 onClick={() => { if (!drag.current?.moved) onAgentOpen?.(agent.id); }}
                 aria-label={`${agent.title} — ${agent.name}`}
               >
+                {marching && (
+                  <svg className="temple-march" aria-hidden="true">
+                    <rect />
+                  </svg>
+                )}
                 <span className={"presence-dot temple-dot " + status} />
                 <span className="temple-text">
                   <b className="temple-name">{agent.name}</b>

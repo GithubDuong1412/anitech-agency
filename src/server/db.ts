@@ -48,6 +48,8 @@ export interface DeptStore {
   tasks(): Promise<Task[]>;
   getTask(id: string): Promise<Task | undefined>;
   saveTask(task: Task): Promise<void>;
+  /** Remove a trashed task and its thread. A live task is left untouched. */
+  purgeTask(id: string): Promise<boolean>;
   addActivity(input: Omit<ActivityRecord, "id">, at?: number): Promise<ActivityRecord>;
   activities(limit?: number): Promise<ActivityRecord[]>;
   hub(): Promise<HubState>;
@@ -64,7 +66,8 @@ const SCHEMA = `
 create table if not exists meta (key text primary key, value text not null);
 create table if not exists tasks (
   id text primary key, title_key text not null, title text, owner_id text not null,
-  status text not null, run_mode text, provider text, model text, progress integer not null, created_at integer not null
+  status text not null, run_mode text, provider text, model text, progress integer not null, created_at integer not null,
+  deleted_at integer
 );
 create table if not exists threads (
   id text primary key, task_id text, topic_key text, topic_title text, status text not null
@@ -111,6 +114,7 @@ export class Store implements DeptStore {
     if (!columns.has("run_mode")) this.db.exec("alter table tasks add column run_mode text");
     if (!columns.has("provider")) this.db.exec("alter table tasks add column provider text");
     if (!columns.has("model")) this.db.exec("alter table tasks add column model text");
+    if (!columns.has("deleted_at")) this.db.exec("alter table tasks add column deleted_at integer");
   }
 
   private depth = 0;
@@ -171,6 +175,7 @@ export class Store implements DeptStore {
       model: str(row.model),
       progress: Number(row.progress),
       createdAt: Number(row.created_at),
+      ...(row.deleted_at == null ? {} : { deletedAt: Number(row.deleted_at) }),
     };
   }
 
@@ -185,10 +190,29 @@ export class Store implements DeptStore {
 
   async saveTask(task: Task) {
     this.db.prepare(
-      `insert into tasks (id, title_key, title, owner_id, status, run_mode, provider, model, progress, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `insert into tasks (id, title_key, title, owner_id, status, run_mode, provider, model, progress, created_at, deleted_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict(id) do update set title_key = excluded.title_key, title = excluded.title, owner_id = excluded.owner_id,
-         status = excluded.status, run_mode = excluded.run_mode, provider = excluded.provider, model = excluded.model, progress = excluded.progress`,
-    ).run(task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, task.runMode ?? null, task.provider ?? null, task.model ?? null, Math.round(task.progress), task.createdAt);
+         status = excluded.status, run_mode = excluded.run_mode, provider = excluded.provider, model = excluded.model, progress = excluded.progress,
+         deleted_at = excluded.deleted_at`,
+    ).run(task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, task.runMode ?? null, task.provider ?? null, task.model ?? null, Math.round(task.progress), task.createdAt, task.deletedAt ?? null);
+  }
+
+  async purgeTask(id: string): Promise<boolean> {
+    const task = await this.getTask(id);
+    if (!task?.deletedAt) return false;
+    const threadId = "thread-" + id;
+    this.tx(() => {
+      const threads = this.db.prepare("select id from threads where task_id = ? or id = ?").all(id, threadId) as Row[];
+      for (const thread of threads) {
+        const current = String(thread.id);
+        this.db.prepare("delete from messages where thread_id = ?").run(current);
+        this.db.prepare("delete from thread_participants where thread_id = ?").run(current);
+        this.db.prepare("delete from threads where id = ?").run(current);
+      }
+      this.db.prepare("delete from tasks where id = ?").run(id);
+      this.setMeta("hub_version", String(Number(this.meta("hub_version") ?? 0) + 1));
+    });
+    return true;
   }
 
   // ---- activities --------------------------------------------------------
@@ -259,6 +283,10 @@ export class Store implements DeptStore {
         }
         if (old.status !== thread.status) this.db.prepare("update threads set status = ? where id = ?").run(thread.status, thread.id);
         if (old.participants.join("|") !== thread.participants.join("|")) writeParticipants(thread);
+      }
+      const nextIds = new Set(next.messages.map((message) => message.id));
+      for (const message of previous.messages) {
+        if (!nextIds.has(message.id)) this.db.prepare("delete from messages where id = ?").run(message.id);
       }
       for (const message of next.messages) {
         if (knownMessages.has(message.id)) continue;

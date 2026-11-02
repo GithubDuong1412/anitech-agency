@@ -23,5 +23,6 @@ export type RunEvent =
   | { type: "message"; message: import("./hub").HubMessage; thread: import("./hub").HubThread }
   | { type: "task"; task: Task }
   | { type: "activity"; activity: ActivityRecord }
+  | { type: "drop"; messageIds: string[] }
   | { type: "error"; code: string }
   | { type: "done" };

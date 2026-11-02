@@ -11,6 +11,7 @@
     "controlRoom": "Control room",
     "agentRoster": "Agent roster",
     "workQueue": "Work queue",
+    "trash": "Trash",
     "pendingApproval": "{count} awaiting approval"
   },
   "dashboard": {
@@ -145,6 +146,7 @@
     "participants": "Taking part",
     "watching": "Synced, watching",
     "noMessages": "Waiting for the first message…",
+    "typing": "Typing",
     "status": {
       "open": "Open",
       "synced": "In sync",
@@ -177,6 +179,13 @@
     "review": "Review",
     "open": "Open full queue",
     "empty": "No tasks match this filter."
+  },
+  "trash": {
+    "kicker": "DELETED",
+    "title": "Trash",
+    "empty": "The trash is empty.",
+    "restore": "Restore",
+    "purge": "Delete permanently"
   },
   "taskStatus": {
     "active": "IN PROGRESS",
@@ -211,7 +220,14 @@
     "approvalPrompt": "Goku completed the quality gate. Approve this release?",
     "ownerLine": "Assigned to",
     "executionAi": "AI · {model}",
-    "executionDemo": "Demo mode"
+    "executionDemo": "Demo mode",
+    "retry": "Retry",
+    "delete": "Delete",
+    "deleteTitle": "Delete task",
+    "deleteHint": "Type delete task to confirm.",
+    "deleteAction": "Delete",
+    "purgeTitle": "Delete task permanently",
+    "purgeHint": "Type delete task to delete it permanently."
   },
   "executive": {
     "kicker": "EXECUTIVE DESK",
@@ -248,7 +264,11 @@
     "motionRestored": "Character motion is enabled.",
     "agentError": "The agent could not answer. Check the model settings and try again.",
     "agentBusy": "This map is handling another job. Wait for it to finish and try again.",
-    "agentRateLimited": "You are sending too fast. Wait a moment and try again."
+    "agentRateLimited": "You are sending too fast. Wait a moment and try again.",
+    "taskDeleted": "The task is in the trash.",
+    "taskRestored": "The task is back in the queue.",
+    "taskPurged": "The task is permanently deleted.",
+    "deleteRejected": "The confirmation text does not match."
   },
   "footer": {
     "modelLive": "MODEL {model}",

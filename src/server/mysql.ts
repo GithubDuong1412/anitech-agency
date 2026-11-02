@@ -70,10 +70,22 @@ export function ensureMysql(config: MysqlConfig): Promise<void> {
     const [taskColumns] = await pool.query<RowDataPacket[]>(
       "select column_name from information_schema.columns where table_schema = database() and table_name = 'tasks'",
     );
-    const columns = new Set(taskColumns.map((row) => String(row.column_name)));
-    if (!columns.has("run_mode")) await pool.query("alter table tasks add column run_mode varchar(16) null");
-    if (!columns.has("provider")) await pool.query("alter table tasks add column provider varchar(64) null");
-    if (!columns.has("model")) await pool.query("alter table tasks add column model varchar(160) null");
+    // Laragon's MySQL returns information_schema fields as COLUMN_NAME. A case-sensitive
+    // read misses them, then ALTER fails because the column is already there and the
+    // state API stays down, so the page keeps the two built-in demo tasks.
+    const columns = new Set(taskColumns.map((row) => String(row.column_name ?? row.COLUMN_NAME).toLowerCase()));
+    const addColumn = async (name: string, definition: string) => {
+      if (columns.has(name)) return;
+      try {
+        await pool.query(`alter table tasks add column ${definition}`);
+      } catch (error) {
+        if ((error as { code?: string }).code !== "ER_DUP_FIELDNAME") throw error;
+      }
+    };
+    await addColumn("run_mode", "run_mode varchar(16) null");
+    await addColumn("provider", "provider varchar(64) null");
+    await addColumn("model", "model varchar(160) null");
+    await addColumn("deleted_at", "deleted_at bigint null");
   })().catch((error) => {
     schemaReady = null;
     throw error;
@@ -161,6 +173,7 @@ export class MysqlStore implements DeptStore {
       model: str(row.model),
       progress: Number(row.progress),
       createdAt: Number(row.created_at),
+      ...(row.deleted_at == null ? {} : { deletedAt: Number(row.deleted_at) }),
     };
   }
 
@@ -174,14 +187,37 @@ export class MysqlStore implements DeptStore {
     return rows[0] ? this.toTask(rows[0]) : undefined;
   }
 
+  /** Insert or update one task, including a soft-delete timestamp. */
   async saveTask(task: Task) {
     await this.query(
-      `insert into tasks (department_id, id, title_key, title, owner_id, status, run_mode, provider, model, progress, created_at)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `insert into tasks (department_id, id, title_key, title, owner_id, status, run_mode, provider, model, progress, created_at, deleted_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on duplicate key update title_key = values(title_key), title = values(title), owner_id = values(owner_id),
-         status = values(status), run_mode = values(run_mode), provider = values(provider), model = values(model), progress = values(progress)`,
-      [this.departmentId, task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, task.runMode ?? null, task.provider ?? null, task.model ?? null, Math.round(task.progress), task.createdAt],
+         status = values(status), run_mode = values(run_mode), provider = values(provider), model = values(model), progress = values(progress),
+         deleted_at = values(deleted_at)`,
+      [this.departmentId, task.id, task.titleKey, task.title ?? null, task.ownerId, task.status, task.runMode ?? null, task.provider ?? null, task.model ?? null, Math.round(task.progress), task.createdAt, task.deletedAt ?? null],
     );
+  }
+
+  async purgeTask(id: string): Promise<boolean> {
+    const task = await this.getTask(id);
+    if (!task?.deletedAt) return false;
+    const threadId = "thread-" + id;
+    await this.tx(async () => {
+      const [threads] = await this.query(
+        "select id from threads where department_id = ? and (task_id = ? or id = ?)",
+        [this.departmentId, id, threadId],
+      );
+      for (const thread of threads) {
+        const current = String(thread.id);
+        await this.query("delete from messages where department_id = ? and thread_id = ?", [this.departmentId, current]);
+        await this.query("delete from thread_participants where department_id = ? and thread_id = ?", [this.departmentId, current]);
+        await this.query("delete from threads where department_id = ? and id = ?", [this.departmentId, current]);
+      }
+      await this.query("delete from tasks where department_id = ? and id = ?", [this.departmentId, id]);
+      await this.setMeta("hub_version", String(Number((await this.meta("hub_version")) ?? 0) + 1));
+    });
+    return true;
   }
 
   async addActivity(input: Omit<ActivityRecord, "id">, at = Date.now(), legacyId?: number): Promise<ActivityRecord> {
@@ -266,6 +302,12 @@ export class MysqlStore implements DeptStore {
           await this.query("update threads set status = ? where department_id = ? and id = ?", [thread.status, this.departmentId, thread.id]);
         }
         if (old.participants.join("|") !== thread.participants.join("|")) await writeParticipants(thread);
+      }
+      const nextIds = new Set(next.messages.map((message) => message.id));
+      for (const message of previous.messages) {
+        if (!nextIds.has(message.id)) {
+          await this.query("delete from messages where department_id = ? and id = ?", [this.departmentId, message.id]);
+        }
       }
       for (const message of next.messages) {
         if (knownMessages.has(message.id)) continue;
