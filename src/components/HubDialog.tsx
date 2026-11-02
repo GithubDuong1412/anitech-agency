@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { type Agent, type AgentId, agentName, avatarStyle } from "@/lib/roster";
 import { HubState, syncedCount } from "@/lib/hub";
+import type { Task } from "@/lib/tasks";
 
 type Props = {
   open: boolean;
@@ -10,14 +11,29 @@ type Props = {
   hub: HubState;
   agents: ReadonlyArray<Agent>;
   talkingIds: readonly AgentId[];
+  /** Agents whose reply is still being written. */
+  thinkingIds: readonly AgentId[];
   /** When set, the dialog shows only this task's conversation. */
   taskId?: string | null;
+  task?: Task | null;
+  running?: boolean;
+  onRetry?: () => void;
+  onDelete?: () => void;
+  onRestore?: () => void;
+  onPurge?: () => void;
   t: (key: string) => string;
 };
 
-export default function HubDialog({ open, onClose, hub, agents, talkingIds, taskId, t }: Props) {
+export default function HubDialog({ open, onClose, hub, agents, talkingIds, thinkingIds, taskId, task, running, onRetry, onDelete, onRestore, onPurge, t }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
+  const threadsRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<"all" | AgentId>("all");
+
+  useEffect(() => {
+    if (!open || thinkingIds.length === 0) return;
+    const list = threadsRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [open, thinkingIds]);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -97,10 +113,11 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, task
             ))}
           </div>}
 
-          <div className="hub-threads">
+          <div className="hub-threads" ref={threadsRef}>
             {threads.length === 0 && <div className="empty-state">{t("hub.empty")}</div>}
             {threads.slice().reverse().map((thread) => {
               const messages = hub.messages.filter((message) => message.threadId === thread.id);
+              const typingHere = thinkingIds.filter((id) => thread.participants.includes(id));
               const watchers = agents.filter((agent) => !thread.participants.includes(agent.id));
               const title = thread.topicKey ? t("tasks." + thread.topicKey) : thread.topicTitle ?? "";
               return (
@@ -134,11 +151,32 @@ export default function HubDialog({ open, onClose, hub, agents, talkingIds, task
                         </li>
                       );
                     })}
+                    {typingHere.map((id) => {
+                      const speaker = agentOf(id);
+                      return (
+                        <li key={"typing-" + id} className="hub-typing">
+                          <span className="mini-agent" style={speaker ? avatarStyle(speaker) : undefined}>{nameOf(id).slice(0, 1)}</span>
+                          <span className="typing-dots" aria-label={t("hub.typing")}><i /><i /><i /></span>
+                        </li>
+                      );
+                    })}
                   </ol>
                 </article>
               );
             })}
           </div>
+          {focused && task && task.deletedAt && (
+            <div className="hub-actions">
+              <button type="button" disabled={running} onClick={onRestore}>{t("trash.restore")}</button>
+              <button className="danger" type="button" disabled={running} onClick={onPurge}>{t("trash.purge")}</button>
+            </div>
+          )}
+          {focused && task && !task.deletedAt && (
+            <div className="hub-actions">
+              {task.status === "failed" && <button type="button" disabled={running} onClick={onRetry}>{t("tasks.retry")}</button>}
+              <button className="danger" type="button" disabled={running} onClick={onDelete}>{t("tasks.delete")}</button>
+            </div>
+          )}
         </div>
       )}
     </dialog>

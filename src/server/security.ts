@@ -1,4 +1,5 @@
 import { type Department, type DepartmentId, getDepartment } from "@/lib/roster";
+import { DELETE_PHRASE } from "@/lib/tasks";
 import { type Locale, isLocale } from "@/i18n";
 import { isDepartmentId } from "./db";
 
@@ -120,3 +121,15 @@ export function parseResolve(body: unknown): ResolveBody | undefined {
 }
 
 export const TASK_ID = /^task-[A-Za-z0-9-]{1,40}$/;
+
+export { DELETE_PHRASE };
+
+export function parseDelete(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  return (body as { confirm?: unknown }).confirm === DELETE_PHRASE;
+}
+
+export function parseLocaleBody(body: unknown): { locale: Locale } {
+  if (!body || typeof body !== "object") return { locale: "vi" };
+  return { locale: localeOf((body as { locale?: unknown }).locale) };
+}

@@ -11,6 +11,7 @@
     "controlRoom": "Sala de control",
     "agentRoster": "Equipo de agentes",
     "workQueue": "Cola de trabajo",
+    "trash": "Papelera",
     "pendingApproval": "{count} pendientes de aprobación"
   },
   "dashboard": {
@@ -145,6 +146,7 @@
     "participants": "Participan",
     "watching": "Sincronizados, observando",
     "noMessages": "Esperando el primer mensaje…",
+    "typing": "Escribiendo",
     "status": {
       "open": "Abierta",
       "synced": "Sincronizada",
@@ -177,6 +179,13 @@
     "review": "Revisión",
     "open": "Abrir toda la cola",
     "empty": "No hay tareas para este filtro."
+  },
+  "trash": {
+    "kicker": "ELIMINADAS",
+    "title": "Papelera",
+    "empty": "La papelera está vacía.",
+    "restore": "Restaurar",
+    "purge": "Eliminar definitivamente"
   },
   "taskStatus": {
     "active": "EN CURSO",
@@ -211,7 +220,14 @@
     "approvalPrompt": "Goku completó el control de calidad. ¿Apruebas el lanzamiento?",
     "ownerLine": "Responsable",
     "executionAi": "IA · {model}",
-    "executionDemo": "Modo demo"
+    "executionDemo": "Modo demo",
+    "retry": "Retry",
+    "delete": "Delete",
+    "deleteTitle": "Eliminar tarea",
+    "deleteHint": "Escribe delete task para confirmar.",
+    "deleteAction": "Delete",
+    "purgeTitle": "Eliminar la tarea de forma permanente",
+    "purgeHint": "Escribe delete task para eliminarla de forma permanente."
   },
   "executive": {
     "kicker": "DESPACHO EJECUTIVO",
@@ -248,7 +264,11 @@
     "motionRestored": "Movimiento de personajes activado.",
     "agentError": "El agente no pudo responder. Revisa la configuración del modelo e inténtalo de nuevo.",
     "agentBusy": "Este mapa está atendiendo otra tarea. Espera a que termine e inténtalo de nuevo.",
-    "agentRateLimited": "Envías demasiado rápido. Espera un momento e inténtalo de nuevo."
+    "agentRateLimited": "Envías demasiado rápido. Espera un momento e inténtalo de nuevo.",
+    "taskDeleted": "La tarea está en la papelera.",
+    "taskRestored": "La tarea volvió a la cola.",
+    "taskPurged": "La tarea se eliminó de forma permanente.",
+    "deleteRejected": "El texto de confirmación no coincide."
   },
   "footer": {
     "modelLive": "MODELO {model}",

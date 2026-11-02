@@ -21,10 +21,15 @@ export interface LlmConfig {
 
 type Env = Record<string, string | undefined>;
 
-/** Null when no key is set: the app then runs in demo mode. */
-export function llmConfig(env: Env = process.env): LlmConfig | null {
+/**
+ * Null when no key is set, or when LLM_DEPARTMENTS is set and this department is not listed.
+ * Omit departmentId to read the shared settings (used by tests and the unscoped health flag).
+ */
+export function llmConfig(env: Env = process.env, departmentId?: string): LlmConfig | null {
   const apiKey = env.LLM_API_KEY?.trim();
   if (!apiKey) return null;
+  const allowed = env.LLM_DEPARTMENTS?.split(",").map((item) => item.trim()).filter(Boolean);
+  if (departmentId && allowed && allowed.length > 0 && !allowed.includes(departmentId)) return null;
   const maxTokens = Number(env.LLM_MAX_TOKENS);
   const timeoutMs = Number(env.LLM_TIMEOUT_MS);
   const maxTurns = Number(env.LLM_MAX_TURNS);
@@ -54,7 +59,7 @@ export function createLlmClient(config: LlmConfig, fetchImpl: typeof fetch = fet
       body: JSON.stringify({
         model: config.model,
         messages,
-        temperature: 0.4,
+        temperature: 0.6,
         max_tokens: config.maxTokens,
         ...(json ? { response_format: { type: "json_object" } } : {}),
       }),

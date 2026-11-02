@@ -10,3 +10,8 @@ npm-debug.log*
 
 # local database files
 data/
+
+# local Python debate runtime
+venv/
+__pycache__/
+*.pyc

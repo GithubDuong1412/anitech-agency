@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!input) return Response.json({ error: "invalid" }, { status: 400 });
   if (!tryLock(dept.id)) return Response.json({ error: "busy" }, { status: 409 });
 
-  const config = llmConfig();
+  const config = llmConfig(process.env, dept.id);
   const store = await openStore(dept.id);
   return ndjson(async (emit) => {
     try {

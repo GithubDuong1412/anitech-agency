@@ -11,6 +11,7 @@
     "controlRoom": "控制室",
     "agentRoster": "Agent 团队",
     "workQueue": "任务队列",
+    "trash": "回收站",
     "pendingApproval": "{count} 项待审批"
   },
   "dashboard": {
@@ -145,6 +146,7 @@
     "participants": "参与者",
     "watching": "已同步，观察中",
     "noMessages": "等待第一条消息…",
+    "typing": "正在输入",
     "status": {
       "open": "进行中",
       "synced": "已同步",
@@ -177,6 +179,13 @@
     "review": "待审核",
     "open": "打开完整队列",
     "empty": "此筛选条件下没有任务。"
+  },
+  "trash": {
+    "kicker": "已删除",
+    "title": "回收站",
+    "empty": "回收站是空的。",
+    "restore": "恢复",
+    "purge": "彻底删除"
   },
   "taskStatus": {
     "active": "进行中",
@@ -211,7 +220,14 @@
     "approvalPrompt": "Goku 已完成质量检查。是否批准发布？",
     "ownerLine": "负责人",
     "executionAi": "AI · {model}",
-    "executionDemo": "演示模式"
+    "executionDemo": "演示模式",
+    "retry": "Retry",
+    "delete": "Delete",
+    "deleteTitle": "删除任务",
+    "deleteHint": "输入 delete task 以确认删除。",
+    "deleteAction": "Delete",
+    "purgeTitle": "彻底删除任务",
+    "purgeHint": "输入 delete task 以确认彻底删除。"
   },
   "executive": {
     "kicker": "管理办公室",
@@ -248,7 +264,11 @@
     "motionRestored": "角色动态已启用。",
     "agentError": "智能体无法回答。请检查模型配置后重试。",
     "agentBusy": "此地图正在处理另一项任务。请等待完成后重试。",
-    "agentRateLimited": "发送太快了。请稍等片刻后重试。"
+    "agentRateLimited": "发送太快了。请稍等片刻后重试。",
+    "taskDeleted": "任务已移入回收站。",
+    "taskRestored": "任务已回到队列。",
+    "taskPurged": "任务已彻底删除。",
+    "deleteRejected": "确认文字不正确。"
   },
   "footer": {
     "modelLive": "模型 {model}",

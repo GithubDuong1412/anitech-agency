@@ -11,6 +11,7 @@
     "controlRoom": "Phòng điều hành",
     "agentRoster": "Đội ngũ Agent",
     "workQueue": "Hàng đợi công việc",
+    "trash": "Thùng rác",
     "pendingApproval": "{count} việc chờ phê duyệt"
   },
   "dashboard": {
@@ -145,6 +146,7 @@
     "participants": "Đang tham gia",
     "watching": "Đã đồng bộ, theo dõi",
     "noMessages": "Đang chờ tin nhắn đầu tiên…",
+    "typing": "Đang nhập",
     "status": {
       "open": "Mở",
       "synced": "Đã đồng bộ",
@@ -177,6 +179,13 @@
     "review": "Chờ duyệt",
     "open": "Mở toàn bộ hàng đợi",
     "empty": "Không có nhiệm vụ trong bộ lọc này."
+  },
+  "trash": {
+    "kicker": "ĐÃ XÓA",
+    "title": "Thùng rác",
+    "empty": "Thùng rác đang trống.",
+    "restore": "Khôi phục",
+    "purge": "Xóa hẳn"
   },
   "taskStatus": {
     "active": "ĐANG LÀM",
@@ -211,7 +220,14 @@
     "approvalPrompt": "Goku đã hoàn tất quality gate. Bạn có muốn duyệt phát hành không?",
     "ownerLine": "Người phụ trách",
     "executionAi": "AI · {model}",
-    "executionDemo": "Chế độ demo"
+    "executionDemo": "Chế độ demo",
+    "retry": "Retry",
+    "delete": "Delete",
+    "deleteTitle": "Xóa nhiệm vụ",
+    "deleteHint": "Nhập \"delete task\" để xác nhận xoá",
+    "deleteAction": "Delete",
+    "purgeTitle": "Xóa hẳn nhiệm vụ",
+    "purgeHint": "Nhập \"delete task\" để xác nhận xoá hẳn"
   },
   "executive": {
     "kicker": "BÀN ĐIỀU HÀNH",
@@ -248,7 +264,11 @@
     "motionRestored": "Đã bật chuyển động nhân vật.",
     "agentError": "Agent chưa trả lời được. Kiểm tra cấu hình model rồi thử lại.",
     "agentBusy": "Sơ đồ này đang xử lý một việc khác. Đợi xong rồi thử lại.",
-    "agentRateLimited": "Bạn gửi hơi nhanh. Đợi một chút rồi thử lại."
+    "agentRateLimited": "Bạn gửi hơi nhanh. Đợi một chút rồi thử lại.",
+    "taskDeleted": "Đã chuyển nhiệm vụ vào thùng rác.",
+    "taskRestored": "Đã khôi phục nhiệm vụ về hàng đợi.",
+    "taskPurged": "Đã xóa hẳn nhiệm vụ.",
+    "deleteRejected": "Chưa đúng chữ xác nhận."
   },
   "footer": {
     "modelLive": "MODEL {model}",

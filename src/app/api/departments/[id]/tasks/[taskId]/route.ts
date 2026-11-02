@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: "not_in_review" }, { status: 409 });
   }
 
-  const config = llmConfig();
+  const config = llmConfig(process.env, dept.id);
   return ndjson(async (emit) => {
     try {
       await runResolve({ store, dept, llm: config ? createLlmClient(config) : null, provider: config ? "openai-compatible" : undefined, model: config?.model, locale: input.locale, emit, maxTurns: config?.maxTurns }, taskId, input.action, input.note);

@@ -1,0 +1,5 @@
+# Không dùng pyautogen: bản 0.10 chỉ là proxy của Microsoft autogen-agentchat
+# và không còn AssistantAgent, GroupChat, GroupChatManager.
+# Không dùng ag2>=1.2: gói đã viết lại, bỏ namespace autogen và API GroupChat.
+# autogen 0.14 vẫn cung cấp API GroupChat mà run_agency.py dùng.
+autogen[openai]==0.14.1

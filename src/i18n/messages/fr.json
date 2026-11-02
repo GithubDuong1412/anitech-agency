@@ -11,6 +11,7 @@
     "controlRoom": "Salle de contrôle",
     "agentRoster": "Équipe d’agents",
     "workQueue": "File de travail",
+    "trash": "Corbeille",
     "pendingApproval": "{count} en attente d’approbation"
   },
   "dashboard": {
@@ -145,6 +146,7 @@
     "participants": "Participent",
     "watching": "Synchronisés, en veille",
     "noMessages": "En attente du premier message…",
+    "typing": "Saisie en cours",
     "status": {
       "open": "Ouverte",
       "synced": "Synchronisée",
@@ -177,6 +179,13 @@
     "review": "Validation",
     "open": "Ouvrir toute la file",
     "empty": "Aucune tâche pour ce filtre."
+  },
+  "trash": {
+    "kicker": "SUPPRIMÉES",
+    "title": "Corbeille",
+    "empty": "La corbeille est vide.",
+    "restore": "Restaurer",
+    "purge": "Supprimer définitivement"
   },
   "taskStatus": {
     "active": "EN COURS",
@@ -211,7 +220,14 @@
     "approvalPrompt": "Goku a terminé le contrôle qualité. Valider la livraison ?",
     "ownerLine": "Responsable",
     "executionAi": "IA · {model}",
-    "executionDemo": "Mode démo"
+    "executionDemo": "Mode démo",
+    "retry": "Retry",
+    "delete": "Delete",
+    "deleteTitle": "Supprimer la tâche",
+    "deleteHint": "Saisissez delete task pour confirmer.",
+    "deleteAction": "Delete",
+    "purgeTitle": "Supprimer définitivement la tâche",
+    "purgeHint": "Saisissez delete task pour la supprimer définitivement."
   },
   "executive": {
     "kicker": "BUREAU EXÉCUTIF",
@@ -248,7 +264,11 @@
     "motionRestored": "Animations des personnages activées.",
     "agentError": "L’agent n’a pas pu répondre. Vérifiez la configuration du modèle et réessayez.",
     "agentBusy": "Cette carte traite déjà une autre tâche. Attendez la fin puis réessayez.",
-    "agentRateLimited": "Vous envoyez trop vite. Patientez un instant puis réessayez."
+    "agentRateLimited": "Vous envoyez trop vite. Patientez un instant puis réessayez.",
+    "taskDeleted": "La tâche est dans la corbeille.",
+    "taskRestored": "La tâche est de retour dans la file.",
+    "taskPurged": "La tâche a été supprimée définitivement.",
+    "deleteRejected": "Le texte de confirmation ne correspond pas."
   },
   "footer": {
     "modelLive": "MODÈLE {model}",

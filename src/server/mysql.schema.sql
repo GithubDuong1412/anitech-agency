@@ -17,6 +17,7 @@ create table if not exists tasks (
   model varchar(160) null,
   progress int not null,
   created_at bigint not null,
+  deleted_at bigint null,
   seq bigint unsigned not null auto_increment,
   primary key (department_id, id),
   unique key tasks_seq (seq)

@@ -91,6 +91,16 @@ export function joinThread(state: HubState, threadId: string, agentId: AgentId):
   });
 }
 
+/** Remove messages, such as a failed model notice, before a retry continues the same thread. */
+export function dropMessages(state: HubState, ids: ReadonlySet<string>): HubState {
+  if (!state.messages.some((message) => ids.has(message.id))) return state;
+  return syncAll({
+    ...state,
+    version: state.version + 1,
+    messages: state.messages.filter((message) => !ids.has(message.id)),
+  });
+}
+
 export function closeThread(state: HubState, threadId: string): HubState {
   return syncAll({
     ...state,
