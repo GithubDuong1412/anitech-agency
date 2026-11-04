@@ -185,6 +185,7 @@
     "title": "Papelera",
     "empty": "La papelera está vacía.",
     "restore": "Restaurar",
+    "delete": "Eliminar",
     "purge": "Eliminar definitivamente"
   },
   "taskStatus": {

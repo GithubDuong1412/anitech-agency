@@ -327,6 +327,8 @@ describe("llm client", () => {
     expect(llmConfig({ LLM_API_KEY: " k ", LLM_BASE_URL: "http://x/v1/", LLM_MODEL: "z", LLM_JSON_MODE: "false" })).toMatchObject({ apiKey: "k", baseUrl: "http://x/v1", model: "z", jsonMode: false, timeoutMs: 45_000, maxTurns: 8 });
     expect(llmConfig({ LLM_API_KEY: "k", LLM_MODEL: "qwen2.5-coder-14b", LLM_DEPARTMENTS: "it" }, "it")?.model).toBe("qwen2.5-coder-14b");
     expect(llmConfig({ LLM_API_KEY: "k", LLM_DEPARTMENTS: "it" }, "social")).toBeNull();
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_MODEL: "qwen2.5-coder-14b", LLM_MODEL_SOCIAL: "meta-llama-3.1-8b-instruct", LLM_DEPARTMENTS: "it,social" }, "it")?.model).toBe("qwen2.5-coder-14b");
+    expect(llmConfig({ LLM_API_KEY: "k", LLM_MODEL: "qwen2.5-coder-14b", LLM_MODEL_SOCIAL: "meta-llama-3.1-8b-instruct", LLM_DEPARTMENTS: "it,social" }, "social")?.model).toBe("meta-llama-3.1-8b-instruct");
   });
 
   it("retries once without json mode when the provider rejects it, and never leaks the key in errors", async () => {

@@ -23,7 +23,7 @@ type Env = Record<string, string | undefined>;
 
 /**
  * Null when no key is set, or when LLM_DEPARTMENTS is set and this department is not listed.
- * Omit departmentId to read the shared settings (used by tests and the unscoped health flag).
+ * LLM_MODEL_<DEPARTMENT> overrides LLM_MODEL for that map. Omit departmentId to read the shared settings.
  */
 export function llmConfig(env: Env = process.env, departmentId?: string): LlmConfig | null {
   const apiKey = env.LLM_API_KEY?.trim();
@@ -33,10 +33,12 @@ export function llmConfig(env: Env = process.env, departmentId?: string): LlmCon
   const maxTokens = Number(env.LLM_MAX_TOKENS);
   const timeoutMs = Number(env.LLM_TIMEOUT_MS);
   const maxTurns = Number(env.LLM_MAX_TURNS);
+  const sharedModel = env.LLM_MODEL?.trim() || "gpt-4o-mini";
+  const override = departmentId ? env[`LLM_MODEL_${departmentId.toUpperCase()}`]?.trim() : "";
   return {
     apiKey,
     baseUrl: (env.LLM_BASE_URL?.trim() || "https://api.openai.com/v1").replace(/\/+$/, ""),
-    model: env.LLM_MODEL?.trim() || "gpt-4o-mini",
+    model: override || sharedModel,
     jsonMode: env.LLM_JSON_MODE?.trim().toLowerCase() !== "false",
     maxTokens: Number.isFinite(maxTokens) && maxTokens > 0 ? Math.min(maxTokens, 4000) : 700,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs >= 1000 ? Math.min(timeoutMs, 120_000) : 45_000,

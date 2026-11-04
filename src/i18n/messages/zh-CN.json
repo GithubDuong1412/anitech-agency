@@ -185,6 +185,7 @@
     "title": "回收站",
     "empty": "回收站是空的。",
     "restore": "恢复",
+    "delete": "删除",
     "purge": "彻底删除"
   },
   "taskStatus": {
