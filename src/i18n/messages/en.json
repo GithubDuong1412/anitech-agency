@@ -185,6 +185,7 @@
     "title": "Trash",
     "empty": "The trash is empty.",
     "restore": "Restore",
+    "delete": "Delete",
     "purge": "Delete permanently"
   },
   "taskStatus": {

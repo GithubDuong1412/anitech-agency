@@ -185,6 +185,7 @@
     "title": "Corbeille",
     "empty": "La corbeille est vide.",
     "restore": "Restaurer",
+    "delete": "Supprimer",
     "purge": "Supprimer définitivement"
   },
   "taskStatus": {

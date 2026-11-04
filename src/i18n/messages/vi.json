@@ -185,6 +185,7 @@
     "title": "Thùng rác",
     "empty": "Thùng rác đang trống.",
     "restore": "Khôi phục",
+    "delete": "Xoá",
     "purge": "Xóa hẳn"
   },
   "taskStatus": {

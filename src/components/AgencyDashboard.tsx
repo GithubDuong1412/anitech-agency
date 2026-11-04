@@ -105,6 +105,7 @@ export default function AgencyDashboard() {
   const profileDialogRef = useRef<HTMLDialogElement>(null);
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const timeoutRef = useRef<number[]>([]);
+  const stateGen = useRef<Partial<Record<DepartmentId, number>>>({});
 
   const department = getDepartment(workspace);
   const liveModel = model?.departments?.[workspace] ?? (model ? { llm: model.llm, model: model.model } : null);
@@ -308,10 +309,13 @@ export default function AgencyDashboard() {
   }
 
   const loadState = useCallback(async (deptId: DepartmentId) => {
+    const gen = (stateGen.current[deptId] ?? 0) + 1;
+    stateGen.current[deptId] = gen;
     try {
       const response = await fetch(`/api/departments/${deptId}/state`, { cache: "no-store" });
-      if (!response.ok) return;
+      if (!response.ok || stateGen.current[deptId] !== gen) return;
       const data = (await response.json()) as DeptSnapshot;
+      if (stateGen.current[deptId] !== gen) return;
       patch(deptId, (current) => ({ ...current, tasks: data.tasks, activities: data.activities, hub: data.hub }));
     } catch {
       // Offline: keep showing what is on screen.
@@ -446,13 +450,23 @@ export default function AgencyDashboard() {
 
   async function restoreTask(task: Task) {
     if (running[workspace] || !task.deletedAt) return;
-    const response = await post(`/api/departments/${workspace}/tasks/${task.id}/restore`, "POST", {});
+    const deptId = workspace;
+    stateGen.current[deptId] = (stateGen.current[deptId] ?? 0) + 1;
+    patch(deptId, (current) => ({
+      ...current,
+      filter: "all",
+      tasks: current.tasks.map((item) => item.id === task.id ? { ...item, deletedAt: undefined } : item),
+    }));
+    setRail("queue");
+    document.getElementById("work-queue")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest" });
+    const response = await post(`/api/departments/${deptId}/tasks/${task.id}/restore`, "POST", {});
     if (!response.ok) {
       announce(t(response.status === 409 ? "messages.agentBusy" : response.status === 429 ? "messages.agentRateLimited" : "messages.agentError"));
+      await loadState(deptId);
       return;
     }
     announce(t("messages.taskRestored"));
-    await loadState(workspace);
+    await loadState(deptId);
   }
 
 
@@ -676,7 +690,10 @@ export default function AgencyDashboard() {
                       <span className="task-marker" />
                       <div className="task-copy"><strong>{taskLabel}</strong><small><span className="mini-agent" style={owner ? avatarStyle(owner) : undefined}>{owner?.name.slice(0, 1)}</span>{owner?.name}</small></div>
                       <span className="task-state @max-[17rem]/queue:max-w-16 @max-[17rem]/queue:text-[0.65rem]">{t("taskStatus." + task.status)}</span>
-                      <div className="task-actions"><button type="button" disabled={running[workspace]} onClick={() => void restoreTask(task)}>{t("trash.restore")}</button></div>
+                      <div className="task-actions align-end">
+                        <button type="button" disabled={running[workspace]} onClick={() => void restoreTask(task)}>{t("trash.restore")}</button>
+                        <button className="danger" type="button" disabled={running[workspace]} onClick={() => askPurge(task)}>{t("trash.delete")}</button>
+                      </div>
                     </m.article>;
                   })}</AnimatePresence>
                 </div>

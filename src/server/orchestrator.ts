@@ -59,6 +59,10 @@ const DEMO_KEY: Record<HubMessageKind, string> = {
   decision: "hub.msg.approved",
 };
 
+const PLAN_INSTRUCTION = "Đưa kế hoạch riêng của vai bạn: quyết định kỹ thuật, các bước, và id người cần hỏi trong ask. Chưa viết kết quả cuối.";
+const PEER_INSTRUCTION = "Chỉ bổ sung ý mà vai bạn chưa thấy ai nói. Cấm diễn lại thiết kế hoặc câu của người khác. Nếu cần hỏi ai, ghi id vào ask.";
+const SUMMARY_INSTRUCTION = "Chốt kết quả cho người dùng: quyết định đã thống nhất và việc còn mở. Không chép lại từng câu trong thread.";
+
 const sleep = (ms: number) => (ms > 0 ? new Promise<void>((resolve) => setTimeout(resolve, ms)) : Promise.resolve());
 
 /** Tags in prompts are our delimiters; strip user angle brackets so text cannot close them. */
@@ -73,7 +77,8 @@ function extractJson(raw: string): Record<string, unknown> | null {
       return null;
     }
   };
-  return tryParse(raw.trim()) ?? (raw.match(/\{[\s\S]*\}/) ? tryParse(raw.match(/\{[\s\S]*\}/)![0]) : null);
+  const embedded = raw.match(/\{[\s\S]*\}/);
+  return tryParse(raw.trim()) ?? (embedded ? tryParse(embedded[0]) : null);
 }
 
 /** True when a reply restates a sentence already in the thread. Short lines are left alone. */
@@ -253,6 +258,46 @@ class Run {
     for (const message of messages) this.spoken.set(message.from, (this.spoken.get(message.from) ?? 0) + 1);
   }
 
+  /** The owner posts a plan. Returns the teammates it asked for. */
+  async plan(ownerId: AgentId): Promise<AgentId[]> {
+    const turn = await this.turn(ownerId, PLAN_INSTRUCTION, "plan", { allowed: PLAN_KINDS });
+    await this.say(ownerId, turn);
+    return turn.ask;
+  }
+
+  /**
+   * Teammates speak in turn, starting from `seeds`; anyone they ask for joins the queue.
+   * The lead, the reviewer, the owner and anyone in `skip` never speak here.
+   * Stops early so the turn budget keeps room for the summary and the review.
+   */
+  async discuss(ownerId: AgentId, seeds: readonly AgentId[], skip: ReadonlySet<AgentId> = new Set()) {
+    const { dept } = this.deps;
+    const excluded = new Set<AgentId>([dept.ceo.id, dept.reviewer.id, ownerId, ...skip]);
+    const queue: AgentId[] = [];
+    const enqueue = (agentId: AgentId) => {
+      if (!excluded.has(agentId) && !queue.includes(agentId) && dept.agents.some((agent) => agent.id === agentId)) queue.push(agentId);
+    };
+    seeds.forEach(enqueue);
+
+    const budget = this.maxTurns - 2;
+    for (let index = 0; index < queue.length; index += 1) {
+      if (this.turns >= budget) break;
+      const agentId = queue[index];
+      if ((this.spoken.get(agentId) ?? 0) >= MAX_TURNS_PER_AGENT) continue;
+      await this.join(agentId);
+      const turn = await this.turn(agentId, PEER_INSTRUCTION, index === 0 ? "question" : "handoff");
+      await this.say(agentId, turn);
+      turn.ask.forEach(enqueue);
+      await this.patchTask({ progress: Math.min(85, 20 + 15 * (index + 1)) });
+    }
+  }
+
+  /** The owner sums up the thread for the user. */
+  async summarize(ownerId: AgentId) {
+    const turn = await this.turn(ownerId, SUMMARY_INSTRUCTION, "answer", { allowed: SUMMARY_KINDS });
+    await this.say(ownerId, turn);
+  }
+
   async review(ownerId: AgentId) {
     const { dept } = this.deps;
     const reviewer = dept.reviewer.id;
@@ -332,36 +377,9 @@ export async function runNewTask(deps: RunDeps, input: NewTaskInput): Promise<Ta
   await run.guard(input.ownerId, async () => {
     const owner = input.ownerId;
     await run.patchTask({ progress: 20 });
-    const plan = await run.turn(owner, "Đưa kế hoạch riêng của vai bạn: quyết định kỹ thuật, các bước, và id người cần hỏi trong ask. Chưa viết kết quả cuối.", "plan", { allowed: PLAN_KINDS });
-    await run.say(owner, plan);
-
-    // The lead and the reviewer do not answer in the middle: one coordinates, the other judges at the end.
-    const skip = new Set<AgentId>([dept.ceo.id, dept.reviewer.id, owner]);
-    const queue: AgentId[] = [];
-    for (const agentId of [...participants, ...plan.ask]) {
-      if (!skip.has(agentId) && !queue.includes(agentId) && dept.agents.some((agent) => agent.id === agentId)) queue.push(agentId);
-    }
-
-    const budget = run.maxTurns - 2; // keep room for the summary and the review
-    for (let index = 0; index < queue.length; index += 1) {
-      if (run.turns >= budget) break;
-      const agentId = queue[index];
-      if ((run.spoken.get(agentId) ?? 0) >= MAX_TURNS_PER_AGENT) continue;
-      await run.join(agentId);
-      const turn = await run.turn(
-        agentId,
-        "Chỉ bổ sung ý mà vai bạn chưa thấy ai nói. Cấm diễn lại thiết kế hoặc câu của người khác. Nếu cần hỏi ai, ghi id vào ask.",
-        index === 0 ? "question" : "handoff",
-      );
-      await run.say(agentId, turn);
-      for (const askId of turn.ask) {
-        if (!skip.has(askId) && !queue.includes(askId)) queue.push(askId);
-      }
-      await run.patchTask({ progress: Math.min(85, 20 + 15 * (index + 1)) });
-    }
-
-    const summary = await run.turn(owner, "Chốt kết quả cho người dùng: quyết định đã thống nhất và việc còn mở. Không chép lại từng câu trong thread.", "answer", { allowed: SUMMARY_KINDS });
-    await run.say(owner, summary);
+    const asked = await run.plan(owner);
+    await run.discuss(owner, [...participants, ...asked]);
+    await run.summarize(owner);
     await run.review(owner);
   });
 
@@ -440,45 +458,19 @@ export async function runRetry(deps: RunDeps, taskId: string): Promise<Task | un
 
   await run.guard(current.ownerId, async () => {
     const owner = current.ownerId;
-    let ask: AgentId[] = [];
-    if (!messages.some((message) => message.from === owner && message.kind === "plan")) {
-      const plan = await run.turn(owner, "Đưa kế hoạch riêng của vai bạn: quyết định kỹ thuật, các bước, và id người cần hỏi trong ask. Chưa viết kết quả cuối.", "plan", { allowed: PLAN_KINDS });
-      await run.say(owner, plan);
-      ask = plan.ask;
-    }
+    const hasPlan = messages.some((message) => message.from === owner && message.kind === "plan");
+    const asked = hasPlan ? [] : await run.plan(owner);
 
-    const skip = new Set<AgentId>([dept.ceo.id, dept.reviewer.id, owner]);
+    // Teammates who already spoke before the failure are not asked again.
     const spokenPeers = new Set(
       messages
         .filter((message) => message.from !== owner && message.kind !== "review" && message.kind !== "decision")
         .map((message) => message.from),
     );
-    const queue: AgentId[] = [];
-    for (const agentId of [...thread.participants, ...ask]) {
-      if (!skip.has(agentId) && !queue.includes(agentId) && !spokenPeers.has(agentId) && dept.agents.some((agent) => agent.id === agentId)) queue.push(agentId);
-    }
-
-    const budget = run.maxTurns - 2;
-    for (let index = 0; index < queue.length; index += 1) {
-      if (run.turns >= budget) break;
-      const agentId = queue[index];
-      if ((run.spoken.get(agentId) ?? 0) >= MAX_TURNS_PER_AGENT) continue;
-      await run.join(agentId);
-      const turn = await run.turn(
-        agentId,
-        "Chỉ bổ sung ý mà vai bạn chưa thấy ai nói. Cấm diễn lại thiết kế hoặc câu của người khác. Nếu cần hỏi ai, ghi id vào ask.",
-        index === 0 ? "question" : "handoff",
-      );
-      await run.say(agentId, turn);
-      for (const askId of turn.ask) {
-        if (!skip.has(askId) && !queue.includes(askId) && !spokenPeers.has(askId)) queue.push(askId);
-      }
-      await run.patchTask({ progress: Math.min(85, 20 + 15 * (index + 1)) });
-    }
+    await run.discuss(owner, [...thread.participants, ...asked], spokenPeers);
 
     if (!(await threadMessages()).some((message) => message.from === owner && message.kind === "answer")) {
-      const summary = await run.turn(owner, "Chốt kết quả cho người dùng: quyết định đã thống nhất và việc còn mở. Không chép lại từng câu trong thread.", "answer", { allowed: SUMMARY_KINDS });
-      await run.say(owner, summary);
+      await run.summarize(owner);
     }
     if (!(await threadMessages()).some((message) => message.from === dept.reviewer.id && message.kind === "review")) {
       await run.review(owner);

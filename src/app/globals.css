@@ -283,8 +283,12 @@ main.is-map-focus .map-frame.is-temple { width: min(100cqw, calc(100cqh * var(--
 .task-item.review .task-progress span { background: var(--amber); }
 .task-item.complete .task-progress span { background: #a8c970; }
 .task-actions { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 0.3125rem; margin-top: -1px; }
-.task-actions button { padding: 0.3125rem 0.4375rem; border: 1px solid #465448; border-radius: 0.25rem; background: #202a26; color: #dce6d6; cursor: pointer; font-size: 0.75rem; }
+.task-actions.align-end { flex-wrap: nowrap; justify-content: flex-end; align-self: end; }
+.task-actions button { padding: 0.3125rem 0.4375rem; border: 1px solid #465448; border-radius: 0.25rem; background: #202a26; color: #dce6d6; cursor: pointer; font-size: 0.75rem; white-space: nowrap; }
 .task-actions button:hover { border-color: var(--lime); }
+.task-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.task-actions button.danger { border-color: #e24b3c; color: #ffd7d0; }
+.task-actions button.danger:hover { border-color: #ff8a7a; }
 .empty-state { padding: 1.125rem 0.25rem; color: #849188; font-size: 0.875rem; text-align: center; }
 .queue-link { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.5625rem 1px 2px; border: 0; border-top: 1px solid var(--color-line-soft); background: none; color: #91a194; cursor: pointer; font-size: 0.8125rem; }
 .queue-link:hover { color: var(--lime); }
